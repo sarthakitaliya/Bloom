@@ -1,6 +1,10 @@
 {
-  "name": "@bloom/agent",
+  "name": "api",
   "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist"
+  },
   "type": "module",
   "private": true,
   "devDependencies": {
@@ -11,9 +15,7 @@
   },
   "dependencies": {
     "@e2b/code-interpreter": "^2.1.0",
-    "@langchain/core": "^1.0.0-alpha.7",
-    "@langchain/google-genai": "^0.2.18",
-    "dotenv": "^17.2.3",
-    "langchain": "^1.0.0-alpha.9"
+    "@types/express": "^5.0.3",
+    "express": "^5.1.0"
   }
 }

@@ -7,11 +7,15 @@ import { addDependency } from "./tools/addDependency";
 import { webSearch } from "./tools/webSearch";
 import { updateFile } from "./tools/updateFile";
 import { generateComponent } from "./tools/generateComponent";
+import {config} from "@bloom/config";
+import { z } from "zod";
+import { removeDependency } from "./tools/removeDependency";
+import { runWebsite } from "./tools/runWebsite";
 
 dotenv.config({ path: "../../.env" });
 
 const model = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
+  apiKey: config.googleGenAiApiKey,
   model: "gemini-2.5-pro",
   temperature: 0,
 });
@@ -33,15 +37,6 @@ const handleToolErrors = createMiddleware({
 
 export const agent = createAgent({
   model,
-  tools: [createFile, addDependency, webSearch, updateFile, generateComponent],
-  middleware: [handleToolErrors] as const,
+  tools: [createFile, generateComponent, addDependency, removeDependency, runWebsite],
   systemPrompt: systemPrompt,
 });
-
-agent
-  .invoke({
-    messages: [{ role: "user", content: "create todo app and make component TodoList" }],
-  })
-  .then((response) => {
-    console.log(response.messages);
-  });

@@ -1,5 +1,5 @@
 {
-  "name": "@bloom/agent",
+  "name": "@bloom/config",
   "main": "src/index.ts",
   "type": "module",
   "private": true,
@@ -10,10 +10,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@e2b/code-interpreter": "^2.1.0",
-    "@langchain/core": "^1.0.0-alpha.7",
-    "@langchain/google-genai": "^0.2.18",
     "dotenv": "^17.2.3",
-    "langchain": "^1.0.0-alpha.9"
+    "zod": "^4.1.12"
   }
 }
