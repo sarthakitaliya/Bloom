@@ -18,6 +18,7 @@ export const systemPrompt = `
     - Use the webSearch tool to gather information or resources when necessary to fulfill user instructions.
     - When updating files, make sure to preserve existing content unless the user specifies otherwise.
     - Try to use Tailwind CSS for styling wherever applicable.    
+    - runWebsite: Use this tool to start the development server.
 
     This is what the initial file structure looks like:
     ${initialFileStructure}
@@ -28,3 +29,5 @@ export const systemPrompt = `
     tailwingcss is already setup in the project so don't include any setup steps for tailwindcss.
     Your goal is to assist users in building and modifying web applications efficiently and effectively.
 `;
+
+export const systemPromptForTitleAgent = `Create a single short project title (max 6 words) in Title Case based on this user request. Return only the title, no explanation.`;

@@ -1,102 +1,131 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
-import styles from "./page.module.css";
+"use client";
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
-
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
-
-  return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
+import { useState } from "react";
+import { signIn, useSession } from "../lib/auth-client";
+import Image from "next/image";
+import api from "../lib/axios";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [authPopup, setAuthPopup] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
+  const handleLogIn = async () => {
+    await signIn.social({
+      provider: "google",
+    });
+    setAuthPopup(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Prompt submitted:", prompt);
+    try {
+      const {data} = await api.post("/projects", { prompt });
+      if(data.success) {
+        setPrompt("");
+        router.push(`/projects/${data.data.id}`);
+      }else {
+        //TODO: show error to user
+        console.error("Failed to create project:", data.message);
+      }
+      console.log("Project created:", data);
+    } catch (error) {
+      //TODO: show error to user
+      console.error("Error creating project:", error);
+    }
+  };
+  return (
+    <>
+      {authPopup && !session && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+          onClick={() => setAuthPopup(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-8 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.com/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+            <h2 className="text-xl font-bold mb-4">Authentication</h2>
+            <button onClick={handleLogIn}>Continue with Google</button>
+            <button
+              className="mt-4 px-4 py-2 bg-pink-500 text-white rounded cursor-pointer"
+              onClick={() => setAuthPopup(false)}
+            >
+              Close
+            </button>
+          </div>
         </div>
-        <Button appName="web" className={styles.secondary}>
-          Open alert
-        </Button>
+      )}
+
+      <main className="min-h-screen w-full bg-gray-800 flex flex-col items-center">
+        {/* Header */}
+        <header className="w-full flex justify-between items-center px-8 py-6 bg-transparent">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-white">Bloom</span>
+          </div>
+          <div className="flex items-center gap-4">
+            {session ? (
+              <>
+                <Image
+                  src={session.user?.image!}
+                  alt="User Avatar"
+                  className="w-10 h-10 rounded-full cursor-pointer hover:ring-1 hover:ring-gray-300"
+                  width={200}
+                  height={399}
+                />
+              </>
+            ) : (
+              <>
+                <button
+                  className="rounded-full bg-[#23243a] text-white px-4 py-2 font-semibold cursor-pointer"
+                  onClick={() => setAuthPopup(true)}
+                >
+                  Log In
+                </button>
+                <button
+                  className="rounded-full bg-[#23243a] text-white px-4 py-2 font-semibold cursor-pointer"
+                  onClick={() => setAuthPopup(true)}
+                >
+                  Get Started
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* Hero Section */}
+        <section className="flex flex-col items-center justify-center flex-1 w-full mt-12">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 text-center">
+            Build something <span className="text-pink-400">with</span> Bloom
+          </h1>
+          <p className="text-lg md:text-xl text-gray-200 mb-8 text-center">
+            Create apps and websites by chatting with AI
+          </p>
+          {/* Search Box */}
+          <div className="bg-[#23243a] rounded-2xl shadow-lg flex flex-col md:flex-row items-center w-full max-w-xl p-6 mb-16">
+            <form
+              className="flex flex-1 w-full items-center"
+              onSubmit={handleSubmit}
+            >
+              <input
+                className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-lg px-2 py-2"
+                placeholder="Ask Bloom to create a dashboard to..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+              <button
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
+                type="submit"
+              >
+                <span>↑</span>
+              </button>
+            </form>
+          </div>
+        </section>
       </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.com?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.com →
-        </a>
-      </footer>
-    </div>
+    </>
   );
 }

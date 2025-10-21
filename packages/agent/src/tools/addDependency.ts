@@ -1,6 +1,6 @@
 import { tool } from "langchain";
 import { z } from "zod";
-import { Sandbox } from "@e2b/code-interpreter";
+import { sandboxManager } from "../class/sandboxManager";
 
 const AddDependencySchema = z.object({
   sandboxId: z
@@ -14,9 +14,9 @@ export const addDependency = tool(
   async (input) => {
     const { sandboxId, packageName, version } =
       AddDependencySchema.parse(input);
-    // Simulate adding a dependency (replace with actual package management logic)
-    const sandbox = await Sandbox.connect(sandboxId);
+    const sandbox = await sandboxManager.getSandbox(sandboxId);
     await sandbox.commands.run(`npm install ${packageName}@${version}`);
+    console.log("added dependency", packageName);
 
     return `Dependency "${packageName}@${version}" added to the project. and sandboxId: ${sandboxId}`;
   },

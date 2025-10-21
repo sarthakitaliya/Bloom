@@ -1,6 +1,6 @@
 import { tool } from "langchain";
 import { z } from "zod";
-import { Sandbox } from "@e2b/code-interpreter";
+import { sandboxManager } from "../class/sandboxManager";
 
 const GenerateComponentSchema = z.object({
   name: z.string().describe("The name of the component to generate."),
@@ -13,12 +13,11 @@ const GenerateComponentSchema = z.object({
 export const generateComponent = tool(
   async (input) => {
     const { name, content, sandboxId } = GenerateComponentSchema.parse(input);
-    // Simulate component generation (replace with actual logic)
-    const sandbox = await Sandbox.connect(sandboxId);
-    if (!sandbox) {
-      throw new Error(`Sandbox with ID ${sandboxId} not found.`);
-    }
+
+    const sandbox = await sandboxManager.getSandbox(sandboxId);
     await sandbox.files.write(`src/components/${name}.jsx`, content);
+    console.log("generated component", name);
+    
     return `Generated component "${name}":\n${content}`;
   },
   {

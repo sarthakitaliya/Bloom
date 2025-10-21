@@ -1,5 +1,8 @@
 import { agent } from "./agent";
 
+export * from "./agent";
+export * from "./class/sandboxManager";
+
 export async function agentInvoke(prompt: string, sandboxId: string) {
   const response = await agent.invoke({
     messages: [

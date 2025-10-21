@@ -1,6 +1,6 @@
 import { tool } from "langchain";
 import { z } from "zod";
-import { Sandbox } from "@e2b/code-interpreter";
+import { sandboxManager } from "../class/sandboxManager";
 
 const CreateFileSchema = z.object({
   sandboxId: z
@@ -13,15 +13,11 @@ const CreateFileSchema = z.object({
 export const createFile = tool(
   async (input) => {
     const { sandboxId, filename, content } = CreateFileSchema.parse(input);
-    const sandbox = await Sandbox.connect(sandboxId);
-    if (!sandbox) {
-      throw new Error(`Sandbox with ID ${sandboxId} not found.`);
-    }
-    console.log("fer", sandboxId);
+    const sandbox = await sandboxManager.getSandbox(sandboxId);
 
     await sandbox.files.write(filename, content);
-    console.log("filename", filename);
-
+    console.log("created file", filename);
+    
     return `File "${filename}" created with content: ${content} and sandboxId: ${sandboxId}`;
   },
   {

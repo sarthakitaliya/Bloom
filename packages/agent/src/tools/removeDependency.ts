@@ -1,6 +1,6 @@
 import { tool } from "langchain";
 import { z } from "zod";
-import { Sandbox } from "@e2b/code-interpreter";
+import { sandboxManager } from "../class/sandboxManager";
 
 const RemoveDependencySchema = z.object({
   sandboxId: z
@@ -12,8 +12,9 @@ const RemoveDependencySchema = z.object({
 export const removeDependency = tool(
   async (input) => {
     const { sandboxId, packageName } = RemoveDependencySchema.parse(input);
-    const sandbox = await Sandbox.connect(sandboxId);
+    const sandbox = await sandboxManager.getSandbox(sandboxId);
     await sandbox.commands.run(`npm uninstall ${packageName}`);
+    console.log("removed dependency", packageName);
 
     return `Dependency "${packageName}" removed from the project. and sandboxId: ${sandboxId}`;
   },

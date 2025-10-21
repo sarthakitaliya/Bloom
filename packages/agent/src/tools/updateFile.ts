@@ -1,6 +1,6 @@
 import { tool } from "langchain";
 import { z } from "zod";
-import { Sandbox } from "@e2b/code-interpreter";
+import { sandboxManager } from "../class/sandboxManager";
 
 const UpdateFileSchema = z.object({
   filename: z.string().describe("The name of the file to update"),
@@ -13,8 +13,10 @@ const UpdateFileSchema = z.object({
 export const updateFile = tool(
   async (input) => {
     const { filename, content, sandboxId } = UpdateFileSchema.parse(input);
-    const sandbox = await Sandbox.connect(sandboxId);
+    const sandbox = await sandboxManager.getSandbox(sandboxId);
     await sandbox.files.write(filename, content);
+    console.log("file updated", filename);
+    
     return `File "${filename}" updated with new content: ${content}`;
   },
   {
