@@ -12,8 +12,13 @@ export const runWebsite = tool(
   async (input) => {
     const { sandboxId } = RunWebsiteSchema.parse(input);
     const sandbox = await sandboxManager.getSandbox(sandboxId);
-    await sandbox.commands.run(`npm run dev`);
-    console.log(`website running on https://${sandbox.getHost(5173)}`);
+    try {
+      await sandbox.commands.run(`npm run dev > /tmp/dev.log 2>&1`);
+    } catch (error) {
+      console.error("Error running website:", error);
+      console.log(`website running on https://${sandbox.getHost(5173)}`);
+      return `Failed to run website: ${error}`;
+    }
 
     return `Website is running at: https://${sandbox.getHost(5173)}`;
   },

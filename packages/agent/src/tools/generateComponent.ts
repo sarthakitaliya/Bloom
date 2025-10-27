@@ -5,16 +5,16 @@ import { sandboxManager } from "../class/sandboxManager";
 const GenerateComponentSchema = z.object({
   name: z.string().describe("The name of the component to generate."),
   content: z.string().describe("The content of the component."),
-  sandboxId: z
+  projectId: z
     .string()
-    .describe("The ID of the sandbox to which the component will be added."),
+    .describe("The ID of the project."),
 });
 
 export const generateComponent = tool(
   async (input) => {
-    const { name, content, sandboxId } = GenerateComponentSchema.parse(input);
+    const { name, content, projectId } = GenerateComponentSchema.parse(input);
 
-    const sandbox = await sandboxManager.getSandbox(sandboxId);
+    const sandbox = await sandboxManager.getSandbox(projectId);
     await sandbox.files.write(`src/components/${name}.jsx`, content);
     console.log("generated component", name);
     

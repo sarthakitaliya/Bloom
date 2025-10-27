@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import type { ApiResponse } from "../types/ApiResponse";
 import { agentInvoke, titleAgent } from "@bloom/agent";
 import { sandboxManager } from "@bloom/agent";
+import { builderQueue, connection as redis } from "@bloom/queue";
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
@@ -21,7 +22,7 @@ export const getProjects = async (req: Request, res: Response) => {
   }
 };
 
-export const createProject = async (req: Request, res: Response) => {
+export const initProject = async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
     const titleResponse = await titleAgent.invoke({
@@ -50,10 +51,41 @@ export const createProject = async (req: Request, res: Response) => {
         content: prompt,
       },
     });
+
+    const job = await prisma.job.create({
+      data: {
+        projectId: newProject.id,
+        type: "BUILDING",
+        status: "QUEUED",
+      },
+    });
+
+    const sandbox = await sandboxManager.createSandbox(newProject.id);
+    redis.set(
+      `sandbox-${newProject.id}`,
+      JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
+      "EX",
+      60 * 60 * 1 // 1 hour expiration
+    );
+    console.log("from API", sandbox.sandboxId);
+
+    await builderQueue.obliterate({ force: true });
+    await builderQueue.add(
+      "builder-queue",
+      {
+        projectId: newProject.id,
+        sandboxId: sandbox.sandboxId,
+        prompt,
+        id: job.id,
+        jobType: "INIT",
+      },
+      { removeOnComplete: true, removeOnFail: false }
+    );
+
     res.status(201).json({
       success: true,
-      data: newProject,
-    } as ApiResponse<typeof newProject>);
+      data: { project: { ...newProject }, job: { ...job } },
+    } as ApiResponse<{ project: typeof newProject; job: typeof job }>);
   } catch (error) {
     res
       .status(500)
@@ -61,18 +93,13 @@ export const createProject = async (req: Request, res: Response) => {
   }
 };
 
-export const createProjectWithAgent = async (req: Request, res: Response) => {
+export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    if (!projectId) {
-      return res.status(400).json({
-        success: false,
-        message: "Project ID is required",
-      } as ApiResponse<null>);
-    }
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: {
         id: projectId,
+        userId: req.user.id,
       },
     });
     if (!project) {
@@ -81,36 +108,142 @@ export const createProjectWithAgent = async (req: Request, res: Response) => {
         message: "Project not found",
       } as ApiResponse<null>);
     }
-    const prompt = await prisma.chatHistory.findFirst({
+    const job = await prisma.job.findFirst({
       where: {
         projectId: project.id,
-        from: "USER",
       },
       orderBy: {
         createdAt: "desc",
       },
     });
-    if (!prompt) {
+
+    if (!project.sandboxId || !project.lastSeenAt) {
+      if (job && ["QUEUED", "ACTIVE"].includes(job.status)) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            project,
+            job,
+          },
+        } as ApiResponse<{ project: typeof project; job: typeof job }>);
+      }
       return res.status(404).json({
         success: false,
-        message: "No user prompt found",
+        message: "Sandbox not found or not initialized",
       } as ApiResponse<null>);
     }
 
-    const sandbox = await sandboxManager.createSandbox();
-    const agentResponse = await agentInvoke(prompt.content!, sandbox.sandboxId);
+    try {
+      const lastSeen = new Date(project.lastSeenAt);
+      const now = new Date();
+      const EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes
+      if (now.getTime() - lastSeen.getTime() > EXPIRATION_MS) {
+        await redis.del(`sandbox-${project.id}`);
+        const sandbox = await sandboxManager.createSandbox(project.id);
+        redis.set(
+          `sandbox-${project.id}`,
+          JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
+          "EX",
+          60 * 60 * 1 // 1 hour expiration
+        );
+        const job = await prisma.job.create({
+          data: {
+            projectId: project.id,
+            type: "RESTORE",
+            status: "QUEUED",
+          },
+        });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        sandboxId: sandbox.sandboxId,
-        agentMessages: agentResponse.messages,
-        previewUrl: `https://${sandbox.getHost(5173)}`,
+        await builderQueue.add("builder-queue", {
+          projectId: project.id,
+          sandboxId: project.sandboxId,
+          jobType: "RESTORE",
+          id: job.id,
+        });
+        return res.status(200).json({
+          success: true,
+          data: project,
+          restoring: true,
+        } as ApiResponse<typeof project>);
+      } else {
+        console.log("restoring from existing preview url");
+
+        return res.status(200).json({
+          success: true,
+          data: project,
+          restoring: false,
+        } as ApiResponse<typeof project>);
+      }
+    } catch (e) {
+      return res.status(404).json({
+        success: false,
+        message: "Sandbox not found",
+      } as ApiResponse<null>);
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error" } as ApiResponse<null>);
+  }
+};
+
+export const extendSandbox = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        userId: req.user.id,
       },
-    } as ApiResponse<{
-      sandboxId: string;
-      agentMessages: typeof agentResponse.messages;
-    }>);
+    });
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      } as ApiResponse<null>);
+    }
+
+    const client = await sandboxManager.getSandbox(project.id);
+    if (!client) {
+      await redis.del(`sandbox-${project.id}`);
+      const sandbox = await sandboxManager.createSandbox(project.id);
+      redis.set(
+        `sandbox-${project.id}`,
+        JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
+        "EX",
+        60 * 60 * 1 // 1 hour expiration
+      );
+      const job = await prisma.job.create({
+        data: {
+          projectId: project.id,
+          type: "RESTORE",
+          status: "QUEUED",
+        },
+      });
+
+      await builderQueue.add("builder-queue", {
+        projectId: project.id,
+        sandboxId: sandbox.sandboxId,
+        jobType: "RESTORE",
+        id: job.id,
+      });
+      return res.status(200).json({
+        success: true,
+        data: project,
+        restoring: true,
+      } as ApiResponse<typeof project>);
+    }
+    await client.setTimeout(10 * 60 * 1000); // Extend timeout by 10 minutes
+
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { lastSeenAt: new Date() },
+    });
+    res.status(200).json({
+      success: true,
+      message: "Sandbox extended",
+      restoring: false,
+    } as ApiResponse<null>);
   } catch (error) {
     res
       .status(500)

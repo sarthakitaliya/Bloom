@@ -11,6 +11,7 @@ const ConfigSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
     GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    REDIS_URL: z.string().min(1, "REDIS_URL is required"),
 });
 
 const env = ConfigSchema.parse(process.env);
@@ -23,4 +24,5 @@ export const config = {
     googleClientId: env.GOOGLE_CLIENT_ID,
     googleClientSecret: env.GOOGLE_CLIENT_SECRET,
     databaseUrl: env.DATABASE_URL,
+    redisUrl: env.REDIS_URL,
 };

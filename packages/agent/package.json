@@ -11,8 +11,9 @@
   },
   "dependencies": {
     "@e2b/code-interpreter": "^2.1.0",
-    "@langchain/core": "^1.0.0-alpha.7",
-    "@langchain/google-genai": "^0.2.18",
+    "@langchain/core": "^1.0.1",
+    "@langchain/google-genai": "^1.0.0",
+    "@langchain/langgraph": "^1.0.0",
     "dotenv": "^17.2.3",
     "langchain": "^1.0.0-alpha.9"
   }

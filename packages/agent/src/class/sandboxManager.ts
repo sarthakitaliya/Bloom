@@ -1,25 +1,45 @@
 import { config } from "@bloom/config";
-import { Sandbox, type Sandbox as sandbox } from "@e2b/code-interpreter";
+import { type Sandbox as sandboxType, Sandbox } from "@e2b/code-interpreter";
+import { connection as redis } from "@bloom/queue";
 
-type SandboxClient = sandbox;
+type SandboxClient = sandboxType;
 
 type Entry = {
   sandbox: SandboxClient;
   lastAccessed: number;
 };
+let sandboxes: Map<string, Entry> = new Map();
 class SandboxManager {
-  private sandboxes: Map<string, Entry> = new Map();
   private TEMPLATE_ID = "ziksdofsuxuq20ijo96k";
 
-  public async createSandbox() {
+  public Sandboxes() {
+    return sandboxes.forEach((value, key) => {
+      console.log(
+        `Project ID: ${key}, Last Accessed: ${new Date(value.lastAccessed).toISOString()}`
+      );
+    });
+  }
+  public async createSandbox(projectId: string) {
     try {
-      const client = await Sandbox.betaCreate(this.TEMPLATE_ID, {
+      const client = await Sandbox.create(this.TEMPLATE_ID, {
         apiKey: config.e2bApiKey,
-        autoPause: false,
         timeoutMs: 10 * 60 * 1000, // 10 minutes
       });
+      console.log("Sandbox created with ID:", client.sandboxId);
+      const existing = sandboxes.get(projectId);
+      if (existing) {
+        sandboxes.delete(projectId);
+        try {
+          existing.sandbox.kill();
+        } catch (error) {
+          console.error(
+            `Error cleaning up existing sandbox for project ${projectId}:`,
+            error
+          );
+        }
+      }
       const entry: Entry = { sandbox: client, lastAccessed: Date.now() };
-      this.sandboxes.set(client.sandboxId, entry);
+      sandboxes.set(projectId, entry);
       return client;
     } catch (error) {
       console.error("Error creating sandbox:", error);
@@ -27,37 +47,27 @@ class SandboxManager {
     }
   }
 
-  public async getSandbox(sandboxId: string): Promise<SandboxClient> {
-    const existing = this.sandboxes.get(sandboxId);
+  public async getSandbox(projectId: string): Promise<SandboxClient> {
+    const existing = await redis.get(`sandbox-${projectId}`);
     if (existing) {
-      existing.lastAccessed = Date.now();
-      return existing.sandbox;
+      const { sandboxId } = JSON.parse(existing);
+      const client = await Sandbox.connect(sandboxId);
+      return client;
     }
 
-    try {
-      const client = await Sandbox.betaCreate(this.TEMPLATE_ID, {
-        apiKey: config.e2bApiKey,
-        autoPause: false,
-      });
-      const entry: Entry = { sandbox: client, lastAccessed: Date.now() };
-      this.sandboxes.set(client.sandboxId, entry);
-      return client;
-    } catch (error) {
-      console.error(`Error creating sandbox ${sandboxId}:`, error);
-      throw new Error(`Sandbox with ID ${sandboxId} not found.`);
-    }
+    throw new Error("Sandbox not found");
   }
 
-  public killSandbox(sandboxId: string) {
-    const entry = this.sandboxes.get(sandboxId);
+  public killSandbox(projectId: string) {
+    const entry = sandboxes.get(projectId);
     if (entry) {
       try {
         entry.sandbox.kill();
       } catch (error) {
-        console.error(`Error cleaning up sandbox ${sandboxId}:`, error);
+        console.error(`Error cleaning up sandbox ${projectId}:`, error);
         throw error;
       } finally {
-        this.sandboxes.delete(sandboxId);
+        sandboxes.delete(projectId);
       }
     }
   }

@@ -3,32 +3,34 @@ import { z } from "zod";
 import { sandboxManager } from "../class/sandboxManager";
 
 const ReadFileSchema = z.object({
-  filename: z.string().describe("The name of the file to read"),
-  sandboxId: z
+  filename: z
     .string()
-    .describe("The ID of the sandbox where the file is located"),
+    .describe("The relative path of the file to read (do not start with /)"),
+  projectId: z.string().describe("The ID of the project"),
 });
 
 export const readFile = tool(
   async (input) => {
-    const { filename, sandboxId } = ReadFileSchema.parse(input);
-    const sandbox = await sandboxManager.getSandbox(sandboxId);
-    const exists = await sandbox.files.exists(filename);
+    const { filename, projectId } = ReadFileSchema.parse(input);
+    const normalizedPath = filename.replace(/^\/+/, "");
+
+    const sandbox = await sandboxManager.getSandbox(projectId);
+    const exists = await sandbox.files.exists(normalizedPath);
     if (!exists) {
-      return `File "${filename}" does not exist in sandboxId: ${sandboxId}`;
+      return `File "${normalizedPath}" does not exist in projectId: ${projectId}`;
     }
-    const content = await sandbox.files.read(filename);
-    console.log("file read", filename, content);
+    const content = await sandbox.files.read(normalizedPath);
+    console.log("file read", normalizedPath, content);
 
     return {
-        filename,
-        content,
-        sandboxId,
+      filename,
+      content,
+      projectId,
     };
   },
   {
     name: "readFile",
-    description: "Reads the content of a file with the given filename.",
+    description: "Reads a text file from the sandbox. The path must be relative to the project root (no leading /).",
     schema: ReadFileSchema,
   }
 );

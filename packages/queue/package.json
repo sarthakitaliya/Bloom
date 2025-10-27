@@ -1,0 +1,16 @@
+{
+  "name": "@bloom/queue",
+  "main": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "bullmq": "^5.61.0",
+    "ioredis": "^5.8.2"
+  }
+}

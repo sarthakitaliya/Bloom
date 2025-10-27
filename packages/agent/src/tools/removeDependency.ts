@@ -3,20 +3,20 @@ import { z } from "zod";
 import { sandboxManager } from "../class/sandboxManager";
 
 const RemoveDependencySchema = z.object({
-  sandboxId: z
+  projectId: z
     .string()
-    .describe("The ID of the sandbox to which the dependency will be removed"),
+    .describe("The ID of the project"),
   packageName: z.string().describe("The name of the package to remove"),
 });
 
 export const removeDependency = tool(
   async (input) => {
-    const { sandboxId, packageName } = RemoveDependencySchema.parse(input);
-    const sandbox = await sandboxManager.getSandbox(sandboxId);
+    const { projectId, packageName } = RemoveDependencySchema.parse(input);
+    const sandbox = await sandboxManager.getSandbox(projectId);
     await sandbox.commands.run(`npm uninstall ${packageName}`);
     console.log("removed dependency", packageName);
 
-    return `Dependency "${packageName}" removed from the project. and sandboxId: ${sandboxId}`;
+    return `Dependency "${packageName}" removed from the project. and projectId: ${projectId}`;
   },
   {
     name: "removeDependency",

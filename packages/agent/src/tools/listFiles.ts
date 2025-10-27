@@ -3,20 +3,34 @@ import { z } from "zod";
 import { sandboxManager } from "../class/sandboxManager";
 
 const ListFilesSchema = z.object({
-  sandboxId: z
-    .string()
-    .describe("The ID of the sandbox whose files will be listed"),
+  projectId: z.string().describe("The ID of the project"),
 });
 
 export const listFiles = tool(
   async (input) => {
-    const { sandboxId } = ListFilesSchema.parse(input);
-    const sandbox = await sandboxManager.getSandbox(sandboxId);
-    const files = await sandbox.files.list("/");
+    const { projectId } = ListFilesSchema.parse(input);
+    const sandbox = await sandboxManager.getSandbox(projectId);
+    const cmd = `find . -type f \
+      -not -path "./node_modules/*" \
+      -not -path "./.git/*" \
+      -not -path "./dist/*" \
+      -not -path "./build/*" \
+      -not -name "*.png" \
+      -not -name "*.jpg" \
+      -not -name "*.jpeg" \
+      -not -name "*.gif" \
+      -not -name "*.svg" \
+      -not -name "*.ico" \
+      -not -name "*.env" \
+      -not -name "*.env.*" \
+      -print`;
+    const files = await sandbox.commands
+      .run(cmd)
+      .then((res) => res.stdout.split("\n"));
     console.log("listed files", files);
 
     return {
-      sandboxId,
+      projectId,
       files,
     };
   },

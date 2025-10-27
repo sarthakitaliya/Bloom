@@ -26,7 +26,7 @@ export default function Home() {
       const {data} = await api.post("/projects", { prompt });
       if(data.success) {
         setPrompt("");
-        router.push(`/projects/${data.data.id}`);
+        router.push(`/projects/${data.data.project.id}`);
       }else {
         //TODO: show error to user
         console.error("Failed to create project:", data.message);

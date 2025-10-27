@@ -1,26 +1,28 @@
 import { createAgent, createMiddleware, ToolMessage } from "langchain";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import dotenv from "dotenv";
 import { systemPrompt, systemPromptForTitleAgent } from "./prompt/systemPrompt";
-import { createFile } from "./tools/createFile";
-import { addDependency } from "./tools/addDependency";
-import { webSearch } from "./tools/webSearch";
-import { updateFile } from "./tools/updateFile";
+import {
+  createFile,
+  addDependency,
+  removeDependency,
+  updateFile,
+  listFiles,
+  readFile,
+  runWebsite,
+  planner,
+} from "./tools";
 import { generateComponent } from "./tools/generateComponent";
 import { config } from "@bloom/config";
-import { z } from "zod";
-import { removeDependency } from "./tools/removeDependency";
-import { runWebsite } from "./tools/runWebsite";
-import { listFiles } from "./tools/listFiles";
-import { readFile } from "./tools/readFiles";
+import { MemorySaver } from "@langchain/langgraph";
+import { getLogs } from "./tools/getLogs";
 
-dotenv.config({ path: "../../.env" });
-
-const model = new ChatGoogleGenerativeAI({
+export const model = new ChatGoogleGenerativeAI({
   apiKey: config.googleGenAiApiKey,
-  model: "gemini-2.5-flash",
+  model: "gemini-2.5-flash-lite",
   temperature: 0,
 });
+
+const checkpointer = new MemorySaver();
 
 const handleToolErrors = createMiddleware({
   name: "HandleToolErrors",
@@ -28,7 +30,6 @@ const handleToolErrors = createMiddleware({
     try {
       return handler(request.toolCall);
     } catch (error) {
-      // Return a custom error message to the model
       return new ToolMessage({
         content: `Tool error: Please check your input and try again. (${error})`,
         tool_call_id: request.toolCall.id!,
@@ -40,15 +41,19 @@ const handleToolErrors = createMiddleware({
 export const agent = createAgent({
   model,
   tools: [
+    listFiles,
+    readFile,
     createFile,
     generateComponent,
     updateFile,
     addDependency,
     removeDependency,
-    listFiles,
-    readFile,
     runWebsite,
+    getLogs,
+    planner
   ],
+  checkpointer,
+  middleware: [handleToolErrors],
   systemPrompt: systemPrompt,
 });
 

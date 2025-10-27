@@ -1,14 +1,15 @@
-import expres from "express";
+import express from "express";
 import {
-  createProject,
-  createProjectWithAgent,
+  getProjectById,
   getProjects,
+  initProject,
 } from "../controllers/projects.controller";
 
-const router = expres.Router();
+const router = express.Router();
 
 router.get("/", getProjects);
-router.post("/", createProject);
-router.get("/:projectId/agent", createProjectWithAgent);
+router.post("/", initProject);
+router.get("/:projectId", getProjectById);
+router.post("/:projectId/extend-sandbox", getProjectById);
 
 export default router;

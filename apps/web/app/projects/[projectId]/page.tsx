@@ -1,48 +1,125 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import api from "../../../lib/axios";
+import { io, Socket } from "socket.io-client";
+import initializeSocket from "../../../lib/socket";
 
+interface Message {
+  id?: string;
+  from: "USER" | "AGENT";
+  projectId?: string;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 export default function ProjectPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
+  const { projectId } = React.use(params);
   const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [url, setUrl] = useState("");
+  const [input, setInput] = useState("");
+  const [leftWidth, setLeftWidth] = useState(50); // percent
+  const [dragging, setDragging] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  const socketRef = useRef<Socket | null>(null);
+
   useEffect(() => {
-    const fetchData = async () => {
+    const interval = setInterval(async () => {
       try {
-        setLoading(true);
-        const { data } = await api.get(`/projects/${params.projectId}/agent`);
-        console.log("Agent Response:", data);
-        setUrl(data.data.previewUrl);
-        console.log(url);
-        
+        console.log("Extending sandbox timeout...");        
+        const { data } = await api.post(`/projects/${projectId}/extend-sandbox`);
+        if (data.success) {
+          if(data.restoring) {
+            setRestoring(true);
+          } else {
+            console.log("Sandbox extended successfully");
+            setRestoring(false);
+          }
+        } else {
+          //TODO: show error to user
+          console.error("Failed to extend sandbox:", data.message);
+        }
       } catch (error) {
-        console.error("Error fetching agent data:", error);
+        console.error("Error extending sandbox:", error);
+      }
+    }, 1000 * 60 * 9); // Extend every 9 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    async function fetchProject() {
+      try {
+        const { data: projectData } = await api.get(`/projects/${projectId}`);
+        if (projectData.success) {
+          const { data: conversationData } = await api.get(
+            `/conversations/${projectId}`
+          );
+          setMessages(conversationData.data);
+          if (!projectData.restoring) {
+            setUrl(projectData.data.previewUrl);
+          }
+        }
+        setLoading(true);
+
+        const socket = initializeSocket(projectId);
+        socketRef.current = socket;
+        socket.on("connect", () => {
+          console.log("Connected to WebSocket server:", socket.id);
+          socket.emit("join-project", projectId);
+        });
+
+        socket.on("message", (msg) => {
+          console.log("msg c....");
+          console.log("Message from server:", msg);
+        });
+        socket.on("project-url", (msg) => {
+          const data = JSON.parse(msg);
+          console.log("project-url:", data);
+          if (data.type === "Initialized") {
+            setUrl(`https://${data.previewUrl}`);
+          }
+        });
+        socket.on("error", (err) => {
+          console.error("WebSocket error:", err);
+        });
+        socket.on("disconnect", () => {
+          console.log("Disconnected from WebSocket server");
+        });
+      } catch (error) {
+        console.error("Error fetching project data:", error);
       } finally {
         setLoading(false);
       }
+    }
+    fetchProject();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
-    fetchData();
-  }, [params.projectId]);
-  const [messages, setMessages] = useState([
-    { role: "system", content: "Welcome! Start chatting about your project." },
-  ]);
-  const [input, setInput] = useState("");
-
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setMessages([...messages, { role: "user", content: input }]);
-    setInput("");
-    // TODO: Send to backend and get response, then update messages
+  }, [projectId]);
+  const handleSend = async (e: React.FormEvent) => {
+    try {
+      e.preventDefault();
+      if (!input.trim()) return;
+      const response = await api.post(`/conversations`, {
+        projectId: projectId,
+        prompt: input,
+      });
+      setMessages([...messages, { from: "USER", content: input }]);
+      console.log("Response from backend:", response.data);
+      setInput("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
-
-  // Resizable panel state
-  const [leftWidth, setLeftWidth] = useState(50); // percent
-  const [dragging, setDragging] = useState(false);
 
   // Mouse event handlers for resizing
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -79,7 +156,10 @@ export default function ProjectPage({
   }, [dragging]);
 
   return (
-    <div id="split-container" className="flex h-screen w-full relative select-none">
+    <div
+      id="split-container"
+      className="flex h-screen w-full relative select-none"
+    >
       {/* Left: Chat */}
       <div
         className="h-full flex flex-col bg-[#181A20] p-6 border-r border-gray-800"
@@ -90,10 +170,10 @@ export default function ProjectPage({
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`mb-2 text-sm ${msg.role === "user" ? "text-blue-400" : "text-gray-300"}`}
+              className={`mb-2 text-sm ${msg.from === "USER" ? "text-blue-400" : "text-gray-300"}`}
             >
               <span className="font-semibold mr-2">
-                {msg.role === "user" ? "You" : "System"}:
+                {msg.from === "USER" ? "You" : "System"}:
               </span>
               {msg.content}
             </div>
@@ -119,18 +199,28 @@ export default function ProjectPage({
         className="w-2 h-full bg-gray-700 cursor-col-resize z-10 absolute top-0"
         style={{ left: `calc(${leftWidth}% - 4px)` }}
         onMouseDown={handleMouseDown}
-      >
-      </div>
+      ></div>
       {/* Right: Preview */}
       <div
         className="h-full bg-[#23243a] flex items-center justify-center"
-        style={{ width: `${100 - leftWidth}%`, minWidth: "20%", maxWidth: "80%", marginLeft: "2px" }}
+        style={{
+          width: `${100 - leftWidth}%`,
+          minWidth: "20%",
+          maxWidth: "80%",
+          marginLeft: "2px",
+        }}
       >
-        <iframe
-          src={url}
-          title="Project Preview"
-          className="size-[99%] rounded-xl border border-gray-700 shadow-lg bg-white"
-        />
+        {loading ? (
+          <p className="text-white">Loading project...</p>
+        ) : url === "" ? (
+          <p className="text-white">Initializing project...</p>
+        ) : (
+          <iframe
+            src={url}
+            title="Project Preview"
+            className="size-[99%] rounded-xl border border-gray-700 shadow-lg bg-white"
+          />
+        )}
       </div>
     </div>
   );

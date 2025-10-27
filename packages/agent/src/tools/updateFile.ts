@@ -3,17 +3,17 @@ import { z } from "zod";
 import { sandboxManager } from "../class/sandboxManager";
 
 const UpdateFileSchema = z.object({
-  filename: z.string().describe("The name of the file to update"),
+  filename: z.string().describe("The relative path of the file to update (do not start with /)"),
   content: z.string().describe("The new content to write into the file"),
-  sandboxId: z
+  projectId: z
     .string()
-    .describe("The ID of the sandbox where the file will be updated"),
+    .describe("The ID of the project"),
 });
 
 export const updateFile = tool(
   async (input) => {
-    const { filename, content, sandboxId } = UpdateFileSchema.parse(input);
-    const sandbox = await sandboxManager.getSandbox(sandboxId);
+    const { filename, content, projectId } = UpdateFileSchema.parse(input);
+    const sandbox = await sandboxManager.getSandbox(projectId);
     await sandbox.files.write(filename, content);
     console.log("file updated", filename);
     

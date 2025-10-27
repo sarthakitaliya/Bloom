@@ -1,0 +1,21 @@
+{
+  "name": "ws-server",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist"
+  },
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "bullmq": "^5.61.0",
+    "ioredis": "^5.8.2",
+    "socket.io": "^4.8.1"
+  }
+}
