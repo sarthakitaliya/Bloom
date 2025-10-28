@@ -8,13 +8,13 @@ import {
   updateFile,
   listFiles,
   readFile,
-  runWebsite,
   planner,
 } from "./tools";
 import { generateComponent } from "./tools/generateComponent";
 import { config } from "@bloom/config";
 import { MemorySaver } from "@langchain/langgraph";
 import { getLogs } from "./tools/getLogs";
+import { removeFile } from "./tools/removeFile";
 
 export const model = new ChatGoogleGenerativeAI({
   apiKey: config.googleGenAiApiKey,
@@ -44,13 +44,13 @@ export const agent = createAgent({
     listFiles,
     readFile,
     createFile,
+    removeFile,
     generateComponent,
     updateFile,
     addDependency,
     removeDependency,
-    runWebsite,
     getLogs,
-    planner
+    planner,
   ],
   checkpointer,
   middleware: [handleToolErrors],

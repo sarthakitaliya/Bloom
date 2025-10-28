@@ -14,7 +14,9 @@ export const createFile = tool(
   async (input) => {
     const { projectId, filename, content } = CreateFileSchema.parse(input);
     const sandbox = await sandboxManager.getSandbox(projectId);
-
+    if (!sandbox) {
+      throw new Error(`Sandbox not found for project ID: ${projectId}`);
+    }
     await sandbox.files.write(filename, content);
     console.log("created file", filename);
 

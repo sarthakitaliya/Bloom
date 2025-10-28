@@ -6,7 +6,6 @@ export * from "./removeDependency";
 export * from "./updateFile";
 export * from "./listFiles";
 export * from "./readFiles";
-export * from "./runWebsite";
 export * from "./generateComponent";
 export * from "./planner";
 

@@ -12,6 +12,11 @@ const ConfigSchema = z.object({
     GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     REDIS_URL: z.string().min(1, "REDIS_URL is required"),
+    DO_SPACES_REGION: z.string().min(1, "DO_SPACES_REGION is required"),
+    DO_SPACES_ENDPOINT: z.string().min(1, "DO_SPACES_ENDPOINT is required"),
+    DO_SPACES_KEY: z.string().min(1, "DO_SPACES_KEY is required"),
+    DO_SPACES_BUCKET: z.string().min(1, "DO_SPACES_BUCKET is required"),
+    DO_SPACES_SECRET: z.string().min(1, "DO_SPACES_SECRET is required"),
 });
 
 const env = ConfigSchema.parse(process.env);
@@ -24,5 +29,10 @@ export const config = {
     googleClientId: env.GOOGLE_CLIENT_ID,
     googleClientSecret: env.GOOGLE_CLIENT_SECRET,
     databaseUrl: env.DATABASE_URL,
-    redisUrl: env.REDIS_URL,
+    redisUrl: env.REDIS_URL,  
+    doSpacesRegion: env.DO_SPACES_REGION,
+    doSpacesEndpoint: env.DO_SPACES_ENDPOINT,
+    doSpacesBucket: env.DO_SPACES_BUCKET,
+    doSpacesKey: env.DO_SPACES_KEY,
+    doSpacesSecret: env.DO_SPACES_SECRET,  
 };

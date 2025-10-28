@@ -10,6 +10,9 @@ export const listFiles = tool(
   async (input) => {
     const { projectId } = ListFilesSchema.parse(input);
     const sandbox = await sandboxManager.getSandbox(projectId);
+    if (!sandbox) {
+      throw new Error(`Sandbox not found for project ID: ${projectId}`);
+    }
     const cmd = `find . -type f \
       -not -path "./node_modules/*" \
       -not -path "./.git/*" \

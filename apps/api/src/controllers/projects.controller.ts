@@ -87,6 +87,8 @@ export const initProject = async (req: Request, res: Response) => {
       data: { project: { ...newProject }, job: { ...job } },
     } as ApiResponse<{ project: typeof newProject; job: typeof job }>);
   } catch (error) {
+    console.log("Error initializing project:", error);
+
     res
       .status(500)
       .json({ success: false, message: "Server Error" } as ApiResponse<null>);

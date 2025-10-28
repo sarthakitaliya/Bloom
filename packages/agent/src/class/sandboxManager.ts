@@ -47,15 +47,30 @@ class SandboxManager {
     }
   }
 
-  public async getSandbox(projectId: string): Promise<SandboxClient> {
-    const existing = await redis.get(`sandbox-${projectId}`);
-    if (existing) {
-      const { sandboxId } = JSON.parse(existing);
-      const client = await Sandbox.connect(sandboxId);
-      return client;
+  public async getSandbox(projectId: string): Promise<SandboxClient | null> {
+    try {
+      const existing = await redis.get(`sandbox-${projectId}`);
+      if (existing) {
+        const { sandboxId } = JSON.parse(existing);
+        const client = await Sandbox.connect(sandboxId);
+        return client;
+      }
+    } catch (error) {
+      // If NotFoundError, proceed to create new sandbox
+      if (error instanceof Error && error.name === "NotFoundError") {
+        console.log(
+          `No existing sandbox found for project ${projectId}, creating new one.`
+        );
+        return this.createSandbox(projectId);
+      } else {
+        console.error(
+          `Error retrieving sandbox for project ${projectId}:`,
+          error
+        );
+      }
     }
 
-    throw new Error("Sandbox not found");
+    return null;
   }
 
   public killSandbox(projectId: string) {

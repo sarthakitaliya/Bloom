@@ -3,17 +3,29 @@ import { z } from "zod";
 import { sandboxManager } from "../class/sandboxManager";
 
 const GetLogsSchema = z.object({
-  sandboxId: z.string().describe("The ID of the sandbox to read logs from"),
-  lines: z.number().optional().describe("Number of log lines to show (default 100)"),
-  path: z.string().optional().describe("Path to log file inside sandbox (default /tmp/dev.log)"),
+  projectId: z.string().describe("The ID of the project"),
+  lines: z
+    .number()
+    .optional()
+    .describe("Number of log lines to show (default 100)"),
+  path: z
+    .string()
+    .optional()
+    .describe("Path to log file inside sandbox (default /tmp/dev.log)"),
 });
 
 export const getLogs = tool(
   async (input) => {
-    const { sandboxId, lines = 100, path = "/tmp/dev.log" } = GetLogsSchema.parse(input);
+    const {
+      projectId,
+      lines = 100,
+      path = "/tmp/dev.log",
+    } = GetLogsSchema.parse(input);
 
-    const sandbox = await sandboxManager.getSandbox(sandboxId);
-
+    const sandbox = await sandboxManager.getSandbox(projectId);
+    if (!sandbox) {
+      throw new Error(`Sandbox not found for project ID: ${projectId}`);
+    }
     try {
       const result = await sandbox.commands.run(`tail -n ${lines} ${path}`);
       if (result.exitCode !== 0) {
@@ -27,7 +39,8 @@ export const getLogs = tool(
   },
   {
     name: "getLogs",
-    description: "Fetches the latest lines from the sandbox log file (e.g., /tmp/dev.log).",
+    description:
+      "Fetches the latest lines from the sandbox log file (e.g., /tmp/dev.log).",
     schema: GetLogsSchema,
   }
 );

@@ -15,6 +15,9 @@ export const readFile = tool(
     const normalizedPath = filename.replace(/^\/+/, "");
 
     const sandbox = await sandboxManager.getSandbox(projectId);
+    if (!sandbox) {
+      throw new Error(`Sandbox not found for project ID: ${projectId}`);
+    }
     const exists = await sandbox.files.exists(normalizedPath);
     if (!exists) {
       return `File "${normalizedPath}" does not exist in projectId: ${projectId}`;

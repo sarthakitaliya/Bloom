@@ -1,16 +1,42 @@
 "use client";
+import { useState, useEffect } from "react";
 
-import { useState } from "react";
+type Project = {
+  id: string;
+  title: string;
+  visibility: string;
+  createdAt: string;
+  updatedAt: string;
+};
 import { signIn, useSession } from "../lib/auth-client";
 import Image from "next/image";
 import api from "../lib/axios";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const [authPopup, setAuthPopup] = useState(false);
   const [prompt, setPrompt] = useState("");
   const { data: session, isPending } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const { data } = await api.get("/projects");
+        if (data.success) {
+          setProjects(data.data);
+        }
+      } catch (error) {
+        // Optionally handle error
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    if (session) fetchProjects();
+  }, [session]);
 
   const handleLogIn = async () => {
     await signIn.social({
@@ -23,11 +49,11 @@ export default function Home() {
     e.preventDefault();
     console.log("Prompt submitted:", prompt);
     try {
-      const {data} = await api.post("/projects", { prompt });
-      if(data.success) {
+      const { data } = await api.post("/projects", { prompt });
+      if (data.success) {
         setPrompt("");
         router.push(`/projects/${data.data.project.id}`);
-      }else {
+      } else {
         //TODO: show error to user
         console.error("Failed to create project:", data.message);
       }
@@ -97,12 +123,12 @@ export default function Home() {
         </header>
 
         {/* Hero Section */}
-        <section className="flex flex-col items-center justify-center flex-1 w-full mt-12">
+        <section className="flex flex-col items-center justify-center flex-1 w-full h-screen mt-12 px-4">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 text-center">
             Build something <span className="text-pink-400">with</span> Bloom
           </h1>
           <p className="text-lg md:text-xl text-gray-200 mb-8 text-center">
-            Create apps and websites by chatting with AI
+            Create websites by chatting with AI
           </p>
           {/* Search Box */}
           <div className="bg-[#23243a] rounded-2xl shadow-lg flex flex-col md:flex-row items-center w-full max-w-xl p-6 mb-16">
@@ -125,6 +151,40 @@ export default function Home() {
             </form>
           </div>
         </section>
+        {/* Projects Section */}
+        {session && (
+          <section className="w-full max-w-6xl mx-auto rounded-2xl p-8 mb-12 mt-4">
+            <h2 className="text-2xl font-bold text-white mb-6">My Projects</h2>
+            {loadingProjects ? (
+              <div className="text-white">Loading projects...</div>
+            ) : projects.length === 0 ? (
+              <div className="text-gray-400">No projects found.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {projects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="bg-[#23243a] rounded-xl p-6 flex flex-col min-w-[200px] hover:shadow-lg transition cursor-pointer border border-transparent hover:border-blue-500"
+                    onClick={() => router.push(`/projects/${project.id}`)}
+                  >
+                    <h3 className="text-lg font-semibold text-white mb-2 truncate">
+                      {project.title}
+                    </h3>
+                    <div className="flex-1" />
+                    <div className="flex justify-between items-center mt-4">
+                      <span className="text-xs text-gray-400">
+                        {project.visibility}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
     </>
   );

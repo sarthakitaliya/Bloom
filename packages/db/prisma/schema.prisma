@@ -41,8 +41,10 @@ model Project {
   previewUrl String?
   lastSeenAt DateTime?
 
+  currentSnapshotS3Key String?
+  currentSnapshotAt  DateTime?
+
   chatHistories ChatHistory[]
-  Snapshot      Snapshot[]
   jobs          Job[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
@@ -56,17 +58,6 @@ model ChatHistory {
   project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @default(now()) @updatedAt
-}
-
-model Snapshot {
-  id         String       @id @default(cuid())
-  storageUrl String
-  type       SnapshotType
-  meta       Json?
-  projectId  String
-  project    Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @default(now()) @updatedAt
 }
 
 model Job {
@@ -133,11 +124,6 @@ enum MessageFrom {
 enum ProjectVisibility {
   PRIVATE
   PUBLIC
-}
-
-enum SnapshotType {
-  INIT
-  AUTO
 }
 
 enum JobType {

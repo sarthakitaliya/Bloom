@@ -15,7 +15,11 @@ export const addDependency = tool(
     const { projectId, packageName, version } =
       AddDependencySchema.parse(input);
     const sandbox = await sandboxManager.getSandbox(projectId);
-    await sandbox.commands.run(`npm install ${packageName}@${version}`);
+    const ver = version ? version : 'latest';
+    if (!sandbox) {
+      throw new Error(`Sandbox not found for project ID: ${projectId}`);
+    }
+    await sandbox.commands.run(`npm install ${packageName}@${ver}`, { timeoutMs: 1 * 60 * 1000 }); // 1 minutes timeout
     console.log("added dependency", packageName);
 
     return `Dependency "${packageName}@${version}" added to the project. and sandboxId: ${sandbox.sandboxId}`;

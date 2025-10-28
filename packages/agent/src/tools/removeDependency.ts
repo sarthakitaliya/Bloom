@@ -13,7 +13,10 @@ export const removeDependency = tool(
   async (input) => {
     const { projectId, packageName } = RemoveDependencySchema.parse(input);
     const sandbox = await sandboxManager.getSandbox(projectId);
-    await sandbox.commands.run(`npm uninstall ${packageName}`);
+    if (!sandbox) {
+      throw new Error(`Sandbox not found for project ID: ${projectId}`);
+    }
+    await sandbox.commands.run(`npm uninstall ${packageName}`, { timeoutMs: 1 * 60 * 1000 }); // 1 minutes timeout
     console.log("removed dependency", packageName);
 
     return `Dependency "${packageName}" removed from the project. and projectId: ${projectId}`;
