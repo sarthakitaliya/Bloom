@@ -10,7 +10,6 @@ import {
   readFile,
   planner,
 } from "./tools";
-import { generateComponent } from "./tools/generateComponent";
 import { config } from "@bloom/config";
 import { MemorySaver } from "@langchain/langgraph";
 import { getLogs } from "./tools/getLogs";

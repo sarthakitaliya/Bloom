@@ -27,7 +27,13 @@ io.on("connection", (socket) => {
 
   psub.on("message", (channel, message) => {
     console.log(`Received message from ${channel}: ${message}`);
-    socket.emit("project-url", message);
+    const data = JSON.parse(message);
+    if (data.type === "Initialized") {
+      socket.emit("project-url", message);
+    } else if (data.type === "agentMsg") {
+      socket.emit("agent-message", data.message);
+      socket.emit("message", message);
+    }
   });
 
   socket.on("error", (err) => {

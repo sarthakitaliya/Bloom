@@ -33,13 +33,32 @@ const worker = new Worker(
 
         const response = await agentInvoke(prompt, projectId);
         console.log("[worker] Agent response:", response);
-        await client.commands.run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {timeoutMs: 50 * 1000}).catch((error) => {
-          console.error("[worker] Error starting dev server:", error);
-        }); // 50 seconds timeout
-
+        await client.commands
+          .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
+            timeoutMs: 2 * 60 * 1000,
+          })
+          .catch((error) => {
+            console.error("[worker] Error starting dev server:", error);
+          }); // 2 min timeout
+        const lastMsg = response.messages[response.messages.length - 1];
+        const agentResponse =
+          typeof lastMsg?.content === "string"
+            ? lastMsg.content
+            : "Done — all changes have been applied successfully.";
+        connection.publish(
+          projectId,
+          JSON.stringify({ type: "agentMsg", message: agentResponse })
+        );
+        await prisma.chatHistory.create({
+          data: {
+            projectId: projectId,
+            content: agentResponse,
+            from: "AGENT",
+          },
+        });
         //TODO: UPDATE: chat history in DB with agentResponse
         const previewUrl = await client.getHost(5173);
-        console.log("[worker] Preview URL:", previewUrl);
+        // console.log("[worker] Preview URL:", previewUrl);
         connection.publish(
           projectId,
           JSON.stringify({ type: "Initialized", previewUrl })
@@ -59,10 +78,10 @@ const worker = new Worker(
         if (!snapshotResult.ok) {
           throw new Error("Snapshot creation failed");
         }
-        console.log(
-          "[worker] Snapshot created with result:",
-          snapshotResult.raw
-        );
+        // console.log(
+        //   "[worker] Snapshot created with result:",
+        //   snapshotResult.raw
+        // );
       } else if (jobType === "UPDATE" && prompt) {
         console.log("[worker] Updating sandbox...");
         const response = await agentInvoke(prompt, projectId);
@@ -74,6 +93,22 @@ const worker = new Worker(
         if (!snapshotResult.ok) {
           throw new Error("Snapshot update failed");
         }
+        const lastMsg = response.messages[response.messages.length - 1];
+        const agentResponse =
+          typeof lastMsg?.content === "string"
+            ? lastMsg.content
+            : "Done — all changes have been applied successfully.";
+        connection.publish(
+          projectId,
+          JSON.stringify({ type: "agentMsg", message: agentResponse })
+        );
+        await prisma.chatHistory.create({
+          data: {
+            projectId: projectId,
+            content: agentResponse,
+            from: "AGENT",
+          },
+        });
         console.log(
           "[worker] Snapshot updated with result:",
           snapshotResult.raw
@@ -90,10 +125,7 @@ const worker = new Worker(
         }
 
         console.log("[worker] Restoring snapshot..");
-        const url = await getSignedUrlCommand(
-          3600,
-          projectId
-        ); // expiry 1 hour
+        const url = await getSignedUrlCommand(3600, projectId); // expiry 1 hour
         const restoreResult = await snapshotManager.restoreSnapshot(
           projectId,
           url
@@ -105,9 +137,13 @@ const worker = new Worker(
           "[worker] Snapshot restored with result:",
           restoreResult.raw
         );
-         await client.commands.run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {timeoutMs: 50 * 1000}).catch((error) => {
-          console.error("[worker] Error starting dev server:", error);
-        }); // 50 seconds timeout
+        await client.commands
+          .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
+            timeoutMs: 50 * 1000,
+          })
+          .catch((error) => {
+            console.error("[worker] Error starting dev server:", error);
+          }); // 50 seconds timeout
         const previewUrl = await client.getHost(5173);
         console.log("[worker] Preview URL:", previewUrl);
         connection.publish(

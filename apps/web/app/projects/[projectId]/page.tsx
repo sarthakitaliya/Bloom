@@ -72,7 +72,11 @@ export default function ProjectPage({
           if (!projectData.restoring) {
             setTimeout(() => {
               setUrl(projectData.data.previewUrl);
+<<<<<<< HEAD
             }, 8000); // slight delay to ensure preview is ready
+=======
+            }, 2000); // slight delay to ensure preview is ready
+>>>>>>> 1e7f5b8 (refactor: update delay for preview readiness and enhance WebSocket message handling)
           }
         }
         setLoading(true);
@@ -90,8 +94,20 @@ export default function ProjectPage({
         });
         socket.on("preview-url", (msg) => {
           const data = JSON.parse(msg);
+<<<<<<< HEAD
           console.log("preview-url", data);
           setUrl(`https://${data.previewUrl}`);
+=======
+          console.log("project-url", data);
+          setUrl(`https://${data.previewUrl}`);
+        });
+        socket.on("agent-message", (message: string) => {
+          console.log("Agent message:", message);
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { from: "AGENT", content: message },
+          ]);
+>>>>>>> 1e7f5b8 (refactor: update delay for preview readiness and enhance WebSocket message handling)
         });
         socket.on("error", (err) => {
           console.error("WebSocket error:", err);
