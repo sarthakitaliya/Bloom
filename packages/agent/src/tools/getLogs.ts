@@ -27,7 +27,11 @@ export const getLogs = tool(
       throw new Error(`Sandbox not found for project ID: ${projectId}`);
     }
     try {
+      console.log("getting logs...");
+  
       const result = await sandbox.commands.run(`tail -n ${lines} ${path}`);
+      console.log(result);
+      
       if (result.exitCode !== 0) {
         return `Failed to read logs. stderr: ${result.stderr}`;
       }

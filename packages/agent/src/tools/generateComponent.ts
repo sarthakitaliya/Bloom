@@ -18,7 +18,7 @@ export const generateComponent = tool(
     if (!sandbox) {
       throw new Error(`Sandbox not found for project ID: ${projectId}`);
     }
-    await sandbox.files.write(`src/components/${name}.jsx`, content);
+    await sandbox.files.write(`src/components/${name}.tsx`, content);
     console.log("generated component", name);
     
     return `Generated component "${name}":\n${content}`;

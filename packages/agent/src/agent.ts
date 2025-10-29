@@ -45,7 +45,6 @@ export const agent = createAgent({
     readFile,
     createFile,
     removeFile,
-    generateComponent,
     updateFile,
     addDependency,
     removeDependency,

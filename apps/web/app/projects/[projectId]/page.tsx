@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import api from "../../../lib/axios";
 import { io, Socket } from "socket.io-client";
 import initializeSocket from "../../../lib/socket";
+import Preview from "../../../components/Preview";
+import CodeView from "../../../components/CodeView";
 
 interface Message {
   id?: string;
@@ -26,29 +28,35 @@ export default function ProjectPage({
   const [leftWidth, setLeftWidth] = useState(50); // percent
   const [dragging, setDragging] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [panned, setPanned] = useState<"Preview" | "Editor">("Preview");
 
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        console.log("Extending sandbox timeout...");        
-        const { data } = await api.post(`/projects/${projectId}/extend-sandbox`);
-        if (data.success) {
-          if(data.restoring) {
-            setRestoring(true);
+    const interval = setInterval(
+      async () => {
+        try {
+          console.log("Extending sandbox timeout...");
+          const { data } = await api.post(
+            `/projects/${projectId}/extend-sandbox`
+          );
+          if (data.success) {
+            if (data.restoring) {
+              setRestoring(true);
+            } else {
+              console.log("Sandbox extended successfully");
+              setRestoring(false);
+            }
           } else {
-            console.log("Sandbox extended successfully");
-            setRestoring(false);
+            //TODO: show error to user
+            console.error("Failed to extend sandbox:", data.message);
           }
-        } else {
-          //TODO: show error to user
-          console.error("Failed to extend sandbox:", data.message);
+        } catch (error) {
+          console.error("Error extending sandbox:", error);
         }
-      } catch (error) {
-        console.error("Error extending sandbox:", error);
-      }
-    }, 1000 * 60 * 9); // Extend every 9 minutes
+      },
+      1000 * 60 * 9
+    ); // Extend every 9 minutes
 
     return () => clearInterval(interval);
   }, []);
@@ -62,7 +70,9 @@ export default function ProjectPage({
           );
           setMessages(conversationData.data);
           if (!projectData.restoring) {
-            setUrl(projectData.data.previewUrl);
+            setTimeout(() => {
+              setUrl(projectData.data.previewUrl);
+            }, 8000); // slight delay to ensure preview is ready
           }
         }
         setLoading(true);
@@ -78,12 +88,10 @@ export default function ProjectPage({
           console.log("msg c....");
           console.log("Message from server:", msg);
         });
-        socket.on("project-url", (msg) => {
+        socket.on("preview-url", (msg) => {
           const data = JSON.parse(msg);
-          console.log("project-url:", data);
-          if (data.type === "Initialized") {
-            setUrl(`https://${data.previewUrl}`);
-          }
+          console.log("preview-url", data);
+          setUrl(`https://${data.previewUrl}`);
         });
         socket.on("error", (err) => {
           console.error("WebSocket error:", err);
@@ -215,11 +223,35 @@ export default function ProjectPage({
         ) : url === "" ? (
           <p className="text-white">Initializing project...</p>
         ) : (
-          <iframe
-            src={url}
-            title="Project Preview"
-            className="size-[99%] rounded-xl border border-gray-700 shadow-lg bg-white"
-          />
+          <>
+            <div className="size-full">
+              <button
+                className={`px-4 py-2 m-2 rounded-lg font-semibold cursor-pointer ${
+                  panned === "Preview"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-700 text-gray-300"
+                }`}
+                onClick={() => setPanned("Preview")}
+              >
+                Preview
+              </button>
+              <button
+                className={`px-4 py-2 m-2 rounded-lg font-semibold cursor-pointer ${
+                  panned === "Editor"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-700 text-gray-300"
+                }`}
+                onClick={() => setPanned("Editor")}
+              >
+                Editor
+              </button>
+              {panned === "Editor" ? (
+                <CodeView projectId={projectId} />
+              ) : (
+                <Preview url={url} />
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

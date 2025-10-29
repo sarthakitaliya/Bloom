@@ -252,3 +252,109 @@ export const extendSandbox = async (req: Request, res: Response) => {
       .json({ success: false, message: "Server Error" } as ApiResponse<null>);
   }
 };
+
+export const getFilesTree = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        message: "Project ID is required",
+      } as ApiResponse<null>);
+    }
+    const client = await sandboxManager.getSandbox(projectId);
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: "Sandbox not found",
+      } as ApiResponse<null>);
+    }
+
+    const cmd = `find . -type f \
+      -not -path "./node_modules/*" \
+      -not -path "./.git/*" \
+      -not -path "./dist/*" \
+      -not -path "./build/*" \
+      -not -name "*.png" \
+      -not -name "*.jpg" \
+      -not -name "*.jpeg" \
+      -not -name "*.gif" \
+      -not -name "*.svg" \
+      -not -name "*.ico" \
+      -not -name "*.env" \
+      -not -name "*.env.*" \
+      -not -name "./.npm/_logs/*" \
+      -not -name "./.profile" \
+      -not -name "./.bashrc" \
+      -not -name "./.bash_logout" \
+      -print`;
+    const raw = (await client.commands.run(cmd)).stdout;
+    const lines = raw
+      .split(/\r?\n/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const filtered = lines
+      .map((p) => (p.startsWith("./") ? p.slice(2) : p))
+      .filter((p) => {
+        if (
+          p.startsWith(".npm/") ||
+          p.startsWith(".profile") ||
+          p.startsWith(".bashrc") ||
+          p.startsWith(".bash_logout")
+        )
+          return false;
+        return true;
+      });
+    res.status(200).json({
+      success: true,
+      data: filtered,
+    } as ApiResponse<typeof filtered>);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error" } as ApiResponse<null>);
+  }
+};
+
+export const getFileContent = async (req: Request, res: Response) => {
+  try {
+    const { projectId, filepath } = req.params;
+    if (!projectId || !filepath) {
+      return res.status(400).json({
+        success: false,
+        message: "Project ID and filepath are required",
+      } as ApiResponse<null>);
+    }
+    const client = await sandboxManager.getSandbox(projectId);
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: "Sandbox not found",
+      } as ApiResponse<null>);
+    }
+    const exists = await client.files.exists(filepath);
+    if (!exists) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      } as ApiResponse<null>);
+    }
+
+    const content = await client.files.read(filepath);
+    if (!content) {
+      return res.status(404).json({
+        success: false,
+        message: "File is empty or could not be read",
+      } as ApiResponse<null>);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: content,
+    } as ApiResponse<typeof content>);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error" } as ApiResponse<null>);
+  }
+};
