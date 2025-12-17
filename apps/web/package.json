@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "postinstall": "pnpm dlx prisma@6.7.0 generate --schema=../../packages/db/prisma/schema.prisma",
     "dev": "next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start",
@@ -11,7 +12,9 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@bloom/db": "workspace:*",
     "@monaco-editor/react": "^4.7.0",
+    "@prisma/client": "6.7.0",
     "@repo/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.1.14",
     "axios": "^1.12.2",
@@ -25,14 +28,13 @@
     "tailwindcss": "^4.1.14"
   },
   "devDependencies": {
-    "@bloom/db": "workspace:*",
-    "@prisma/nextjs-monorepo-workaround-plugin": "^7.2.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
     "eslint": "^9.34.0",
+    "prisma": "^6.7.0",
     "typescript": "5.9.2"
   }
 }

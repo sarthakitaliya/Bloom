@@ -76,9 +76,15 @@ importers:
 
   apps/web:
     dependencies:
+      '@bloom/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@prisma/client':
+        specifier: 6.7.0
+        version: 6.7.0(prisma@6.19.1(typescript@5.9.2))(typescript@5.9.2)
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -113,12 +119,6 @@ importers:
         specifier: ^4.1.14
         version: 4.1.18
     devDependencies:
-      '@bloom/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@prisma/nextjs-monorepo-workaround-plugin':
-        specifier: ^7.2.0
-        version: 7.2.0
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -137,6 +137,9 @@ importers:
       eslint:
         specifier: ^9.34.0
         version: 9.39.2(jiti@2.6.1)
+      prisma:
+        specifier: ^6.7.0
+        version: 6.19.1(typescript@5.9.2)
       typescript:
         specifier: 5.9.2
         version: 5.9.2
@@ -1007,9 +1010,6 @@ packages:
 
   '@prisma/get-platform@6.19.1':
     resolution: {integrity: sha512-zsg44QUiQAnFUyh6Fbt7c9HjMXHwFTqtrgcX7DAZmRgnkPyYT7Sh8Mn8D5PuuDYNtMOYcpLGg576MLfIORsBYw==}
-
-  '@prisma/nextjs-monorepo-workaround-plugin@7.2.0':
-    resolution: {integrity: sha512-wkUYEHR2vT/6xB9ufOT+s6pfB4+ZFf4n3qSMmiq+n2EclMXV6LcShY/iUJfagRK5Jqadc6FMdf28yDSD0Qb6/w==}
 
   '@smithy/abort-controller@4.2.6':
     resolution: {integrity: sha512-P7JD4J+wxHMpGxqIg6SHno2tPkZbBUBLbPpR5/T1DEUvw/mEaINBMaPFZNM7lA+ToSCZ36j6nMHa+5kej+fhGg==}
@@ -4338,8 +4338,6 @@ snapshots:
   '@prisma/get-platform@6.19.1':
     dependencies:
       '@prisma/debug': 6.19.1
-
-  '@prisma/nextjs-monorepo-workaround-plugin@7.2.0': {}
 
   '@smithy/abort-controller@4.2.6':
     dependencies:
