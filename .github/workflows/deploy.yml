@@ -1,0 +1,59 @@
+name: Build & Deploy Bloom
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_NAME: Bloom
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" \
+            | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            
+      - name: Build & push API image
+        run: |
+          docker build \
+            -t sarthakbuild/bloom-api:${IMAGE_TAG} \
+            -f apps/api/Dockerfile .
+          docker push sarthakbuild/bloom-api:${IMAGE_TAG}
+
+      - name: Build & push WS image
+        run: |
+          docker build \
+            -t sarthakbuild/bloom-ws:${IMAGE_TAG} \
+            -f apps/ws-server/Dockerfile .
+          docker push sarthakbuild/bloom-ws:${IMAGE_TAG}
+
+      - name: Build & push Worker image
+        run: |
+          docker build \
+            -t sarthakbuild/bloom-worker:${IMAGE_TAG} \
+            -f apps/worker/Dockerfile .
+          docker push sarthakbuild/bloom-worker:${IMAGE_TAG}
+
+
+      - name: Deploy on VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/projects-infra/Bloom
+
+            docker compose pull
+            docker compose up -d
