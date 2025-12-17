@@ -17,7 +17,7 @@ import { removeFile } from "./tools/removeFile";
 
 export const model = new ChatGoogleGenerativeAI({
   apiKey: config.googleGenAiApiKey,
-  model: "gemini-2.5-flash-lite",
+  model: "gemini-2.5-flash",
   temperature: 0,
 });
 

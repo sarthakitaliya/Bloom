@@ -1,7 +1,8 @@
 import axios from "axios";
+import { config } from "@bloom/config";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4040/api",
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   withCredentials: true,
 });
 

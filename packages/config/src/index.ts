@@ -17,6 +17,7 @@ const ConfigSchema = z.object({
     DO_SPACES_KEY: z.string().min(1, "DO_SPACES_KEY is required"),
     DO_SPACES_BUCKET: z.string().min(1, "DO_SPACES_BUCKET is required"),
     DO_SPACES_SECRET: z.string().min(1, "DO_SPACES_SECRET is required"),
+    ALLOWED_ORIGIN: z.string().min(1, "ALLOWED_ORIGIN is required"),
 });
 
 const env = ConfigSchema.parse(process.env);
@@ -34,5 +35,6 @@ export const config = {
     doSpacesEndpoint: env.DO_SPACES_ENDPOINT,
     doSpacesBucket: env.DO_SPACES_BUCKET,
     doSpacesKey: env.DO_SPACES_KEY,
-    doSpacesSecret: env.DO_SPACES_SECRET,  
+    doSpacesSecret: env.DO_SPACES_SECRET,
+    allowedOrigin: env.ALLOWED_ORIGIN,
 };
