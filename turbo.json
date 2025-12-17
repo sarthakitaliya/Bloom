@@ -21,8 +21,7 @@
     },
     "@bloom/db#build": {
       "outputs": [
-        "dist/**",
-        "generated/**"
+        "dist/**"
       ]
     },
     "web#build": {
