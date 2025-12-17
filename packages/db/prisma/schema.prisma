@@ -7,7 +7,7 @@
 generator client {
   provider      = "prisma-client"
   output        = "../generated/prisma"
-  binaryTargets = ["native", "darwin-arm64", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
+  binaryTargets = ["darwin-arm64", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
