@@ -1,0 +1,15 @@
+.git
+.gitignore
+node_modules
+**/node_modules
+**/.prisma
+**/generated
+dist
+build
+.turbo
+coverage
+.env
+.env.*
+.DS_Store
+apps/**/dist
+packages/**/generated

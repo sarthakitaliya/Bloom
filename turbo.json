@@ -7,6 +7,12 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+    "@bloom/db#build": {
+      "outputs": ["dist/**", "generated/**"]
+    },
+    "web#build": {
+      "dependsOn": ["@bloom/db#build"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

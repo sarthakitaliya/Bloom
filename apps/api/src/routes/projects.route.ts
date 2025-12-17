@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Router } from "express";
 import {
   getFileContent,
   getFilesTree,
@@ -7,7 +7,7 @@ import {
   initProject,
 } from "../controllers/projects.controller";
 
-const router = express.Router();
+const router:Router = express.Router();
 
 router.get("/", getProjects);
 router.post("/", initProject);

@@ -291,11 +291,11 @@ export const getFilesTree = async (req: Request, res: Response) => {
     const raw = (await client.commands.run(cmd)).stdout;
     const lines = raw
       .split(/\r?\n/)
-      .map((p) => p.trim())
+      .map((p: any) => p.trim())
       .filter(Boolean);
     const filtered = lines
-      .map((p) => (p.startsWith("./") ? p.slice(2) : p))
-      .filter((p) => {
+      .map((p: any) => (p.startsWith("./") ? p.slice(2) : p))
+      .filter((p: any) => {
         if (
           p.startsWith(".npm/") ||
           p.startsWith(".profile") ||

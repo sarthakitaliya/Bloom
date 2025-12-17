@@ -1,10 +1,17 @@
 {
   "name": "@bloom/queue",
-  "main": "src/index.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
+    "dev": "pnpm run build && pnpm start"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@bloom/config": "workspace:*",
+    "tsc-alias": "^1.8.16"
   },
   "peerDependencies": {
     "typescript": "^5"

@@ -2,24 +2,29 @@
   "name": "worker",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist --target node",
-    "start": "node ./dist/index.js"
+    "build": "tsc -b",
+    "start": "node dist/index.js",
+    "dev": "pnpm run build && pnpm start"
   },
   "type": "module",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "devDependencies": {
+    "@bloom/agent": "workspace:*",
+    "@bloom/config": "workspace:*",
+    "@bloom/db": "workspace:*",
+    "@bloom/queue": "workspace:*"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.917.0",
     "@aws-sdk/lib-storage": "^3.918.0",
     "@aws-sdk/s3-request-presigner": "^3.917.0",
+    "@types/tar-stream": "^3.1.4",
     "bullmq": "^5.61.0",
     "crypto": "^1.0.1",
-    "ioredis": "^5.8.2"
+    "ioredis": "^5.8.2",
+    "tar-stream": "^3.1.7"
   }
 }

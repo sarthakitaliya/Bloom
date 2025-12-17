@@ -3,6 +3,7 @@ version: "3.9"
 services:
   api:
     image: bloom-api:latest
+    platform: linux/amd64
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -10,18 +11,18 @@ services:
       - "4000:4000"
     env_file:
       - .env
-    depends_on:
-      - db
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    depends_on:
-      - db
-  db:
-    image: postgres:latest
-    environment:
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
+  #   depends_on:
+  #     - db
+  # redis:
+  #   image: redis:latest
+  #   ports:
+  #     - "6379:6379"
+  #   depends_on:
+  #     - db
+  # db:
+  #   image: postgres:latest
+  #   environment:
+  #     - POSTGRES_PASSWORD=postgres
+  #   ports:
+  #     - "5432:5432"
     

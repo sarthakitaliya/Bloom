@@ -5,8 +5,10 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client"
   output   = "../generated/prisma"
+  binaryTargets = ["darwin-arm64","debian-openssl-3.0.x"]
+
 }
 
 datasource db {
@@ -42,7 +44,7 @@ model Project {
   lastSeenAt DateTime?
 
   currentSnapshotS3Key String?
-  currentSnapshotAt  DateTime?
+  currentSnapshotAt    DateTime?
 
   chatHistories ChatHistory[]
   jobs          Job[]

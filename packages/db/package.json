@@ -4,7 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "generate": "bunx prisma@6.7.0 generate"
+    "generate": "pnpm dlx prisma@6.7.0 generate"
+  },
+  "exports": {
+    ".": "./index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

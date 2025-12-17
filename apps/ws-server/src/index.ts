@@ -12,7 +12,7 @@ io.on("connection", (socket) => {
   const { projectId } = socket.handshake.query;
   console.log("socket", projectId);
 
-  psub.subscribe(projectId as string, (err) => {
+  psub.subscribe(projectId as string, (err: any) => {
     if (err) {
       console.error("Failed to subscribe: ", err);
       return;
@@ -25,7 +25,7 @@ io.on("connection", (socket) => {
     socket.join(projectId as string);
   });
 
-  psub.on("message", (channel, message) => {
+  psub.on("message", (channel: any, message: any) => {
     console.log(`Received message from ${channel}: ${message}`);
     const data = JSON.parse(message);
     if (data.type === "Initialized") {
