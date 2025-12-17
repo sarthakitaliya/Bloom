@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@bloom/db": "workspace:*",
+    "@prisma/nextjs-monorepo-workaround-plugin": "^7.2.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",

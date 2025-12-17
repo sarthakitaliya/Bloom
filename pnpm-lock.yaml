@@ -116,6 +116,9 @@ importers:
       '@bloom/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^7.2.0
+        version: 7.2.0
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -1004,6 +1007,9 @@ packages:
 
   '@prisma/get-platform@6.19.1':
     resolution: {integrity: sha512-zsg44QUiQAnFUyh6Fbt7c9HjMXHwFTqtrgcX7DAZmRgnkPyYT7Sh8Mn8D5PuuDYNtMOYcpLGg576MLfIORsBYw==}
+
+  '@prisma/nextjs-monorepo-workaround-plugin@7.2.0':
+    resolution: {integrity: sha512-wkUYEHR2vT/6xB9ufOT+s6pfB4+ZFf4n3qSMmiq+n2EclMXV6LcShY/iUJfagRK5Jqadc6FMdf28yDSD0Qb6/w==}
 
   '@smithy/abort-controller@4.2.6':
     resolution: {integrity: sha512-P7JD4J+wxHMpGxqIg6SHno2tPkZbBUBLbPpR5/T1DEUvw/mEaINBMaPFZNM7lA+ToSCZ36j6nMHa+5kej+fhGg==}
@@ -4332,6 +4338,8 @@ snapshots:
   '@prisma/get-platform@6.19.1':
     dependencies:
       '@prisma/debug': 6.19.1
+
+  '@prisma/nextjs-monorepo-workaround-plugin@7.2.0': {}
 
   '@smithy/abort-controller@4.2.6':
     dependencies:
