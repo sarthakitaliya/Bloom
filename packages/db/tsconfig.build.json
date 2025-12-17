@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "strict": true,
+        "skipLibCheck": true,
+        "outDir": "./dist",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": false,
+        "rewriteRelativeImportExtensions": true
+    },
+    "include": [
+        "index.ts",
+        "generated/**/*"
+    ]
+}

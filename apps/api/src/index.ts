@@ -16,9 +16,13 @@ app.use(
   })
 );
 
+app.get("/health", (req, res) => {
+  res.send("API is healthy");
+});
+
 app.use("/api/projects", authMiddleware, projectsRouter);
 app.use("/api/conversations", authMiddleware, conversationsRouter);
 
-app.listen(3030, () => {
-  console.log("API server running on http://localhost:3030");
+app.listen(4040, () => {
+  console.log("API server running on http://localhost:4040");
 });

@@ -69,7 +69,7 @@ class SnapshotManager {
       throw error;
     }
   }
-  public async restoreSnapshot(projectId: string, snapshotUrl: string) {
+  public async restoreSnapshot(projectId: string, snapshotUrl: string): Promise<{ ok: boolean; message: string; raw: unknown }> {
     if (!projectId) throw new Error("projectId required");
     try {
       if (!snapshotUrl) throw new Error("snapshotUrl required");

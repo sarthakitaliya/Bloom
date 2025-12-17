@@ -3,23 +3,66 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
     },
     "@bloom/db#build": {
-      "outputs": ["dist/**", "generated/**"]
+      "outputs": [
+        "dist/**",
+        "generated/**"
+      ]
     },
     "web#build": {
-      "dependsOn": ["@bloom/db#build"]
+      "dependsOn": [
+        "@bloom/db#build"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": [
+        "^check-types"
+      ]
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "@bloom/db#dev": {
+      "cache": false,
+      "persistent": false
+    },
+    "api#dev": {
+      "dependsOn": [
+        "@bloom/db#dev"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "worker#dev": {
+      "dependsOn": [
+        "@bloom/db#dev"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "ws-server#dev": {
+      "dependsOn": [
+        "@bloom/db#dev"
+      ],
       "cache": false,
       "persistent": true
     }

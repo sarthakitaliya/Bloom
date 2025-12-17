@@ -5,10 +5,11 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
-COPY ./apps/api ./apps/api
+COPY ./apps/worker ./apps/worker
 COPY packages ./packages
 
 RUN pnpm install
+
 WORKDIR /app/packages/db
 RUN pnpm run generate
 
@@ -16,5 +17,5 @@ WORKDIR /app
 
 RUN pnpm run build
 
-EXPOSE 4040
-CMD ["node", "./apps/api/dist/src/index.js"]
+# No EXPOSE needed - worker is a background process
+CMD ["node", "./apps/worker/dist/src/index.js"]

@@ -15,6 +15,7 @@
     "@bloom/queue": "workspace:*"
   },
   "dependencies": {
+    "@types/node": "^22.15.3",
     "bullmq": "^5.61.0",
     "ioredis": "^5.8.2",
     "socket.io": "^4.8.1"

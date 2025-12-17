@@ -2,27 +2,58 @@ version: "3.9"
 
 services:
   api:
-    image: bloom-api:latest
+    image: sarthakbuild/bloom-api:latest
     platform: linux/amd64
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     ports:
+      - "4040:4040"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432
+    depends_on:
+      - db
+      - redis
+  worker:
+    image: sarthakbuild/bloom-worker:latest
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432
+    depends_on:
+      - db
+      - redis
+  ws-server:
+    image: sarthakbuild/bloom-ws:latest
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: apps/ws-server/Dockerfile
+    ports:
       - "4000:4000"
     env_file:
       - .env
-  #   depends_on:
-  #     - db
-  # redis:
-  #   image: redis:latest
-  #   ports:
-  #     - "6379:6379"
-  #   depends_on:
-  #     - db
-  # db:
-  #   image: postgres:latest
-  #   environment:
-  #     - POSTGRES_PASSWORD=postgres
-  #   ports:
-  #     - "5432:5432"
-    
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    depends_on:
+      - db
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
