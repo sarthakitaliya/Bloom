@@ -3,14 +3,17 @@
   "main": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "generate": "bunx prisma@6.7.0 generate"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "prisma": "^6.17.1"
+    "prisma": "^6.7.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "@prisma/client": "6.17.1"
+    "@prisma/client": "6.7.0"
   }
 }

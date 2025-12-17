@@ -1,9 +1,10 @@
 {
   "name": "ws-server",
   "main": "src/index.ts",
-  "scripts": {
+ "scripts": {
     "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist"
+    "build": "bun build src/index.ts --outdir ./dist --target node",
+    "start": "node ./dist/index.js"
   },
   "type": "module",
   "private": true,

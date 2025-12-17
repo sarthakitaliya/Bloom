@@ -27,7 +27,7 @@ const handleToolErrors = createMiddleware({
   name: "HandleToolErrors",
   wrapToolCall: (request, handler) => {
     try {
-      return handler(request.toolCall);
+      return handler(request);
     } catch (error) {
       return new ToolMessage({
         content: `Tool error: Please check your input and try again. (${error})`,
