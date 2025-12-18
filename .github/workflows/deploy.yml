@@ -54,8 +54,7 @@ jobs:
           script: |
             cd /root/projects-infra/Bloom
 
-            # update image tags in env
-            sed -i "s/^BLOOM_IMAGE_TAG=.*/BLOOM_IMAGE_TAG=${IMAGE_TAG}/" .env
-               
-            docker compose pull
-            docker compose up -d
+            echo "Deploying Bloom with tag=$IMAGE_TAG"
+
+            BLOOM_IMAGE_TAG=$IMAGE_TAG docker compose pull
+            BLOOM_IMAGE_TAG=$IMAGE_TAG docker compose up -d
