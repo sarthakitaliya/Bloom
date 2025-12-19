@@ -19,6 +19,10 @@ jobs:
           script: |
             set -e
 
+            # Load Node / pnpm
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
             cd /root/Bloom
 
             git pull origin main
