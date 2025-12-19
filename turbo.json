@@ -1,43 +1,32 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "globalEnv": [
-    ".env"
+    "SUB_DOMAIN_COOKIE_DOMAIN",
+    "BETTER_AUTH_URL",
+    "BETTER_AUTH_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "NODE_ENV",
+    "DATABASE_URL"
   ],
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*"
-      ],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "@bloom/db#build": {
-      "outputs": [
-        "dist/**"
-      ]
+      "outputs": ["dist/**"]
     },
     "web#build": {
-      "dependsOn": [
-        "@bloom/db#build"
-      ]
+      "dependsOn": ["@bloom/db#build"]
     },
     "lint": {
-      "dependsOn": [
-        "^lint"
-      ]
+      "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": [
-        "^check-types"
-      ]
+      "dependsOn": ["^check-types"]
     },
     "dev": {
       "cache": false,
@@ -48,23 +37,17 @@
       "persistent": false
     },
     "api#dev": {
-      "dependsOn": [
-        "@bloom/db#dev"
-      ],
+      "dependsOn": ["@bloom/db#dev"],
       "cache": false,
       "persistent": true
     },
     "worker#dev": {
-      "dependsOn": [
-        "@bloom/db#dev"
-      ],
+      "dependsOn": ["@bloom/db#dev"],
       "cache": false,
       "persistent": true
     },
     "ws-server#dev": {
-      "dependsOn": [
-        "@bloom/db#dev"
-      ],
+      "dependsOn": ["@bloom/db#dev"],
       "cache": false,
       "persistent": true
     }
