@@ -13,7 +13,6 @@ app.use(
   cors({
     origin: config.allowedOrigin,
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"],
   })
 );
 

@@ -12,5 +12,20 @@ export const auth = betterAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }
     },
+    advanced:{
+        defaultCookieAttributes:{
+            secure: true,
+            sameSite: "none",
+            httpOnly: true,
+            path: "/",
+        },
+        crossSubDomainCookies:{
+            enabled: true,
+            domain: process.env.SUB_DOMAIN_COOKIE_DOMAIN!,
+        },
+    },
+    trustedOrigins:[
+        process.env.NEXT_PUBLIC_ORIGIN!,
+    ],
     secret: process.env.BETTER_AUTH_SECRET!,
 });
