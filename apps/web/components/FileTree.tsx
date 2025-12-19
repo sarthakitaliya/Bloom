@@ -1,7 +1,6 @@
 import FileTreeNode from "./FileTreeNode";
 import { FileNode, FileTreeProps } from "../types/CodeView";
 
-
 // Convert flat array of paths to tree structure
 function buildTree(paths: string[]): FileNode[] {
   const root: { [key: string]: any } = {};
@@ -38,8 +37,6 @@ function buildTree(paths: string[]): FileNode[] {
   return convertToArray(root);
 }
 
-
-
 export default function FileTree({
   files,
   onFileSelect,
@@ -48,7 +45,10 @@ export default function FileTree({
   const tree = buildTree(files);
 
   return (
-    <div className="w-full h-full bg-[#1e1e1e] overflow-y-auto">
+    <div className="w-full h-full font-mono">
+      <div className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest border-b border-white/5">
+        Explorer
+      </div>
       <div className="py-2">
         {tree.map((node) => (
           <FileTreeNode
@@ -58,6 +58,11 @@ export default function FileTree({
             selectedFile={selectedFile}
           />
         ))}
+        {files.length === 0 && (
+          <div className="px-4 py-4 text-xs text-muted-foreground text-center italic">
+            No files found
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { signIn, useSession } from "../lib/auth-client";
+import api from "../lib/axios";
+import { useRouter } from "next/navigation";
+import { Header } from "../components/Header";
+import { Hero } from "../components/Hero";
+import { motion } from "framer-motion";
+import { Loader2, ArrowRight } from "lucide-react";
 
 type Project = {
   id: string;
@@ -8,17 +15,12 @@ type Project = {
   createdAt: string;
   updatedAt: string;
 };
-import { signIn, useSession } from "../lib/auth-client";
-import Image from "next/image";
-import api from "../lib/axios";
-import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [authPopup, setAuthPopup] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const { data: session, isPending } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function Home() {
           setProjects(data.data);
         }
       } catch (error) {
-        // Optionally handle error
+        console.error("Failed to fetch projects", error);
       } finally {
         setLoadingProjects(false);
       }
@@ -38,154 +40,91 @@ export default function Home() {
     if (session) fetchProjects();
   }, [session]);
 
-  const handleLogIn = async () => {
-    await signIn.social({
-      provider: "google",
-    });
-    setAuthPopup(false);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Prompt submitted:", prompt);
+    if (!prompt) return;
+
+    if (!session) {
+      await signIn.social({ provider: "google" });
+      return;
+    }
+
     try {
       const { data } = await api.post("/projects", { prompt });
       if (data.success) {
         setPrompt("");
         router.push(`/projects/${data.data.project.id}`);
-      } else {
-        //TODO: show error to user
-        console.error("Failed to create project:", data.message);
       }
-      console.log("Project created:", data);
     } catch (error) {
-      //TODO: show error to user
       console.error("Error creating project:", error);
     }
   };
+
   return (
-    <>
-      {authPopup && !session && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          onClick={() => setAuthPopup(false)}
-        >
-          <div
-            className="bg-white rounded-lg p-8 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
+    <main className="min-h-screen bg-background text-foreground selection:bg-primary/20">
+      <Header />
+
+      <Hero prompt={prompt} setPrompt={setPrompt} onSubmit={handleSubmit} />
+
+      {/* Projects Section */}
+      {session && (
+        <section className="container mx-auto px-4 pb-20">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex items-center justify-between mb-8"
           >
-            <h2 className="text-xl font-bold mb-4">Authentication</h2>
-            <button onClick={handleLogIn}>Continue with Google</button>
-            <button
-              className="mt-4 px-4 py-2 bg-pink-500 text-white rounded cursor-pointer"
-              onClick={() => setAuthPopup(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Your Projects</h2>
+          </motion.div>
 
-      <main className="min-h-screen w-full bg-gray-800 flex flex-col items-center">
-        {/* Header */}
-        <header className="w-full flex justify-between items-center px-8 py-6 bg-transparent">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-white">Bloom</span>
-          </div>
-          <div className="flex items-center gap-4">
-            {session ? (
-              <>
-                <Image
-                  src={session.user?.image!}
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full cursor-pointer hover:ring-1 hover:ring-gray-300"
-                  width={200}
-                  height={399}
-                />
-              </>
-            ) : (
-              <>
-                <button
-                  className="rounded-full bg-[#23243a] text-white px-4 py-2 font-semibold cursor-pointer"
-                  onClick={() => setAuthPopup(true)}
-                >
-                  Log In
-                </button>
-                <button
-                  className="rounded-full bg-[#23243a] text-white px-4 py-2 font-semibold cursor-pointer"
-                  onClick={() => setAuthPopup(true)}
-                >
-                  Get Started
-                </button>
-              </>
-            )}
-          </div>
-        </header>
-
-        {/* Hero Section */}
-        <section className="flex flex-col items-center justify-center flex-1 w-full h-screen mt-12 px-4">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 text-center">
-            Build something <span className="text-pink-400">with</span> Bloom
-          </h1>
-          <p className="text-lg md:text-xl text-gray-200 mb-8 text-center">
-            Create websites by chatting with AI
-          </p>
-          {/* Search Box */}
-          <div className="bg-[#23243a] rounded-2xl shadow-lg flex flex-col md:flex-row items-center w-full max-w-xl p-6 mb-16">
-            <form
-              className="flex flex-1 w-full items-center"
-              onSubmit={handleSubmit}
+          {loadingProjects ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="size-8 animate-spin text-indigo-500" />
+            </div>
+          ) : projects.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/5"
             >
-              <input
-                className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-lg px-2 py-2"
-                placeholder="Ask Bloom to create a dashboard to..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-              <button
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
-                type="submit"
-              >
-                <span>↑</span>
-              </button>
-            </form>
-          </div>
-        </section>
-        {/* Projects Section */}
-        {session && (
-          <section className="w-full max-w-6xl mx-auto rounded-2xl p-8 mb-12 mt-4">
-            <h2 className="text-2xl font-bold text-white mb-6">My Projects</h2>
-            {loadingProjects ? (
-              <div className="text-white">Loading projects...</div>
-            ) : projects.length === 0 ? (
-              <div className="text-gray-400">No projects found.</div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="bg-[#23243a] rounded-xl p-6 flex flex-col min-w-[200px] hover:shadow-lg transition cursor-pointer border border-transparent hover:border-blue-500"
-                    onClick={() => router.push(`/projects/${project.id}`)}
-                  >
-                    <h3 className="text-lg font-semibold text-white mb-2 truncate">
-                      {project.title}
-                    </h3>
-                    <div className="flex-1" />
-                    <div className="flex justify-between items-center mt-4">
-                      <span className="text-xs text-gray-400">
-                        {project.visibility}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </span>
+              <p className="text-muted-foreground">No projects yet. Start by creating one above!</p>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project, i) => (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * i }}
+                  key={project.id}
+                  className="group relative bg-card hover:bg-white/5 border border-white/5 hover:border-indigo-500/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer overflow-hidden backdrop-blur-sm"
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                >
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                    <ArrowRight className="size-5 text-indigo-400" />
+                  </div>
+
+                  <div className="flex flex-col h-full">
+                    <div className="size-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6 text-indigo-300 font-bold border border-white/5 shadow-inner">
+                      {project.title.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3 text-white group-hover:text-indigo-300 transition-colors truncate">{project.title}</h3>
+
+                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${project.visibility === 'public' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                        <span className="capitalize">{project.visibility}</span>
+                      </div>
+                      <span>{new Date(project.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-      </main>
-    </>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+    </main>
   );
 }
