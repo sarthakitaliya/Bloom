@@ -26,6 +26,7 @@ export const readFile = tool(
     console.log("file read", normalizedPath, content);
 
     return {
+      success: true,
       filename,
       content,
       projectId,

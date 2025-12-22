@@ -35,10 +35,16 @@ export const getLogs = tool(
       if (result.exitCode !== 0) {
         return `Failed to read logs. stderr: ${result.stderr}`;
       }
-      return result.stdout || "No logs found.";
+      return{
+        success: true,
+        logs: result.stdout,
+      }
     } catch (error) {
       console.error("Error reading logs:", error);
-      return `Error fetching logs: ${error}`;
+      return {
+        success: false,
+        error: `Error fetching logs: ${error}`,
+      };
     }
   },
   {

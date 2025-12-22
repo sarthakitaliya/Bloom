@@ -22,7 +22,12 @@ export const addDependency = tool(
     await sandbox.commands.run(`npm install ${packageName}@${ver}`, { timeoutMs: 1 * 60 * 1000 }); // 1 minutes timeout
     console.log("added dependency", packageName);
 
-    return `Dependency "${packageName}@${version}" added to the project. and sandboxId: ${sandbox.sandboxId}`;
+    return {
+      success: true,
+      action: "addDependency",
+      packageName,
+      version: ver,
+    }
   },
   {
     name: "addDependency",

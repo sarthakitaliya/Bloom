@@ -11,7 +11,24 @@ interface HeroProps {
     onSubmit: (e: React.FormEvent) => void;
 }
 
+import { useRef, useEffect } from "react";
+
 export function Hero({ prompt, setPrompt, onSubmit }: HeroProps) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+        }
+    }, [prompt]);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSubmit(e as unknown as React.FormEvent);
+        }
+    };
     const [isFocused, setIsFocused] = useState(false);
 
     return (
@@ -64,20 +81,23 @@ export function Hero({ prompt, setPrompt, onSubmit }: HeroProps) {
                 backdrop-blur-xl
             `}
                 >
-                    <form className="flex-1 flex items-center gap-2" onSubmit={onSubmit}>
-                        <input
-                            className="flex-1 bg-transparent text-white placeholder-muted-foreground outline-none text-lg px-4 py-3 min-h-[3rem]"
+                    <form className="flex-1 flex items-end gap-2" onSubmit={onSubmit}>
+                        <textarea
+                            ref={textareaRef}
+                            className="flex-1 bg-transparent text-white placeholder-muted-foreground outline-none text-lg px-4 py-3 min-h-[3rem] max-h-[200px] resize-none overflow-y-auto"
                             placeholder="Describe your dream website..."
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
+                            rows={1}
                         />
                         <Button
                             type="submit"
                             size="icon"
                             className={`
-                    h-12 w-12 rounded-xl transition-all duration-300 shadow-none
+                    h-12 w-12 rounded-xl transition-all duration-300 shadow-none mb-1
                     ${prompt ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-white/5 text-muted-foreground cursor-not-allowed"}
                 `}
                             disabled={!prompt}

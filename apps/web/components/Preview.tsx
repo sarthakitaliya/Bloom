@@ -19,6 +19,7 @@ export default function Preview({ url }: { url: string }) {
 
       <div className="h-[calc(100%-40px)] w-full bg-white relative">
         <iframe
+          key={url}
           src={url}
           title="Project Preview"
           className="size-full border-none"

@@ -8,7 +8,16 @@ import Preview from "../../../components/Preview";
 import CodeView from "../../../components/CodeView";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { ArrowLeft, Loader2, Send, Code2, Eye, PanelLeftClose, PanelLeftOpen, Terminal } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Send,
+  Code2,
+  Eye,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Terminal,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "../../../lib/utils";
@@ -31,6 +40,7 @@ export default function ProjectPage({
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [url, setUrl] = useState("");
   const [input, setInput] = useState("");
@@ -81,7 +91,6 @@ export default function ProjectPage({
             }, 2000);
           }
         }
-        setLoading(true);
 
         const socket = initializeSocket(projectId);
         socketRef.current = socket;
@@ -90,12 +99,19 @@ export default function ProjectPage({
           socket.emit("join-project", projectId);
         });
 
-        socket.on("preview-url", (msg) => {
+        socket.on("project-url", (msg) => {
           const data = JSON.parse(msg);
-          setUrl(`https://${data.previewUrl}`);
+          console.log("PROJECT URL RECEIVED", data);
+
+          setTimeout(() => {
+            setUrl(`https://${data.previewUrl}`);
+          }, 1000);
         });
 
         socket.on("agent-message", (message: string) => {
+          console.log("agent-message", message);
+          setProcessing(false);
+
           setMessages((prevMessages) => [
             ...prevMessages,
             { from: "AGENT", content: message },
@@ -111,6 +127,9 @@ export default function ProjectPage({
 
     return () => {
       if (socketRef.current) {
+        socketRef.current.off("agent-message");
+        socketRef.current.off("preview-url");
+        socketRef.current.disconnect();
         socketRef.current.disconnect();
       }
     };
@@ -122,6 +141,7 @@ export default function ProjectPage({
 
     const tempInput = input;
     setInput(""); // Optimistic clear
+    setProcessing(true);
     setMessages((prev) => [...prev, { from: "USER", content: tempInput }]);
 
     try {
@@ -131,6 +151,7 @@ export default function ProjectPage({
       });
     } catch (error) {
       console.error("Error sending message:", error);
+      setProcessing(false);
       // Revert if needed, but for now just log
     }
   };
@@ -168,6 +189,24 @@ export default function ProjectPage({
     };
   }, [dragging]);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !processing) {
+        handleSend(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
       {/* Header (Simplified for Workspace) */}
@@ -177,13 +216,15 @@ export default function ProjectPage({
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-white"
-            onClick={() => router.push('/')}
+            onClick={() => router.push("/")}
           >
             <ArrowLeft className="size-4" />
           </Button>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-white">Project Workspace</span>
-            {loading && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
+            {loading && (
+              <Loader2 className="size-3 animate-spin text-muted-foreground" />
+            )}
           </div>
         </div>
 
@@ -216,7 +257,10 @@ export default function ProjectPage({
         </div>
       </header>
 
-      <div id="split-container" className="flex-1 flex relative overflow-hidden">
+      <div
+        id="split-container"
+        className="flex-1 flex relative overflow-hidden"
+      >
         {/* Left Panel: Chat */}
         <AnimatePresence initial={false}>
           {!isSidebarCollapsed && (
@@ -232,7 +276,12 @@ export default function ProjectPage({
                   <Terminal className="size-4" />
                   <span>Terminal & Chat</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsSidebarCollapsed(true)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setIsSidebarCollapsed(true)}
+                >
                   <PanelLeftClose className="size-3.5" />
                 </Button>
               </div>
@@ -243,15 +292,19 @@ export default function ProjectPage({
                     key={idx}
                     className={cn(
                       "flex flex-col gap-1 max-w-[90%]",
-                      msg.from === "USER" ? "ml-auto items-end" : "mr-auto items-start"
+                      msg.from === "USER"
+                        ? "ml-auto items-end"
+                        : "mr-auto items-start"
                     )}
                   >
-                    <div className={cn(
-                      "px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm",
-                      msg.from === "USER"
-                        ? "bg-primary text-primary-foreground rounded-tr-sm"
-                        : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"
-                    )}>
+                    <div
+                      className={cn(
+                        "px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm",
+                        msg.from === "USER"
+                          ? "bg-primary text-primary-foreground rounded-tr-sm"
+                          : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"
+                      )}
+                    >
                       {msg.content}
                     </div>
                     <span className="text-[10px] text-muted-foreground opacity-50 px-1">
@@ -259,25 +312,36 @@ export default function ProjectPage({
                     </span>
                   </div>
                 ))}
+                {processing && (
+                  <div className="flex flex-col gap-1 max-w-[90%] mr-auto items-start">
+                    <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm bg-white/10 text-gray-200 rounded-tl-sm border border-white/5 flex items-center gap-2">
+                      <Loader2 className="size-3 animate-spin" />
+                      <span className="text-xs text-muted-foreground">Thinking...</span>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
               <div className="p-4 bg-[#0a0a0a] border-t border-white/5">
                 <form
                   onSubmit={handleSend}
-                  className="relative flex items-center bg-white/5 border border-white/10 rounded-xl focus-within:ring-1 focus-within:ring-primary/50 transition-all"
+                  className="relative flex items-end bg-white/5 border border-white/10 rounded-xl focus-within:ring-1 focus-within:ring-primary/50 transition-all"
                 >
-                  <Input
+                  <textarea
+                    ref={textareaRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Ask Bloom to make changes..."
-                    className="border-none bg-transparent shadow-none focus-visible:ring-0 pr-12 h-12 text-sm"
+                    className="w-full bg-transparent border-0 focus:ring-0 resize-none outline-none text-sm px-4 py-3 min-h-[48px] max-h-[200px] overflow-y-auto text-gray-200 placeholder:text-muted-foreground"
+                    style={{ height: "48px" }}
                   />
                   <Button
                     type="submit"
                     size="icon"
-                    className="absolute right-1 w-8 h-8 bg-transparent hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors"
-                    disabled={!input.trim()}
+                    className="absolute right-2 bottom-2 w-8 h-8 bg-transparent hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!input.trim() || processing}
                   >
                     <Send className="size-4" />
                   </Button>

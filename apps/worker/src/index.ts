@@ -33,13 +33,7 @@ const worker = new Worker(
 
         const response = await agentInvoke(prompt, projectId);
         console.log("[worker] Agent response:", response);
-        await client.commands
-          .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
-            timeoutMs: 2 * 60 * 1000,
-          })
-          .catch((error) => {
-            console.error("[worker] Error starting dev server:", error);
-          }); // 2 min timeout
+       
         const lastMsg = response.messages[response.messages.length - 1];
         const agentResponse =
           typeof lastMsg?.content === "string"

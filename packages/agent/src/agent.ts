@@ -17,8 +17,8 @@ import { removeFile } from "./tools/removeFile";
 
 export const model = new ChatGoogleGenerativeAI({
   apiKey: config.googleGenAiApiKey,
-  model: "gemini-2.5-flash",
-  temperature: 0,
+  model: "gemini-2.5-flash-lite",
+  temperature: 0.2,
 });
 
 const checkpointer = new MemorySaver();
@@ -48,7 +48,6 @@ export const agent = createAgent({
     addDependency,
     removeDependency,
     getLogs,
-    planner,
   ],
   checkpointer,
   middleware: [handleToolErrors],

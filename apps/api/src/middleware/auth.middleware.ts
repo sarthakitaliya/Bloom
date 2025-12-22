@@ -15,8 +15,6 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    console.log("headers: ", req.headers);
-    
     const session = await auth.api.getSession({
       headers: fromNodeHeaders(req.headers),
     });

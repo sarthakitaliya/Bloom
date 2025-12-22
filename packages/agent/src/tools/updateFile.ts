@@ -20,7 +20,11 @@ export const updateFile = tool(
     await sandbox.files.write(filename, content);
     console.log("file updated", filename);
     
-    return `File "${filename}" updated with new content: ${content}`;
+    return {
+      updated: true,
+      action: "updateFile",
+      filename,
+    }
   },
   {
     name: "updateFile",

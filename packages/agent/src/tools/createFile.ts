@@ -20,7 +20,11 @@ export const createFile = tool(
     await sandbox.files.write(filename, content);
     console.log("created file", filename);
 
-    return `File "${filename}" created with content: ${content} and sandboxId: ${sandbox.sandboxId}`;
+    return {
+      created: true,
+      action: "createFile",
+      filename,
+    }
   },
   {
     name: "createFile",

@@ -21,7 +21,11 @@ export const generateComponent = tool(
     await sandbox.files.write(`src/components/${name}.tsx`, content);
     console.log("generated component", name);
     
-    return `Generated component "${name}":\n${content}`;
+    return {
+      success: true,
+      action: "generateComponent",
+      name,
+    }
   },
   {
     name: "generateComponent",

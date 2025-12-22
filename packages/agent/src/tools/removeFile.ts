@@ -19,7 +19,11 @@ export const removeFile = tool(
     await sandbox.files.remove(filename);
     console.log("removed file", filename);
 
-    return `File "${filename}" removed from sandboxId: ${sandbox.sandboxId}`;
+    return {
+      success: true,
+      removed: "removeFile",
+      filename,
+    }
   },
   {
     name: "removeFile",

@@ -156,3 +156,23 @@ body {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400;
     /* Pinkish-Purple */
 }
+
+
+/* Custom Scrollbar for Dark Theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+}

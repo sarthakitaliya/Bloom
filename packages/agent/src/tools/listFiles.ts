@@ -33,6 +33,7 @@ export const listFiles = tool(
     console.log("listed files", files);
 
     return {
+      success: true,
       projectId,
       files,
     };

@@ -25,6 +25,8 @@ export const getProjects = async (req: Request, res: Response) => {
 export const initProject = async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
+    console.log("prompt", prompt);
+
     const titleResponse = await titleAgent.invoke({
       messages: [
         {
@@ -35,6 +37,7 @@ export const initProject = async (req: Request, res: Response) => {
     });
 
     const projectTitle = titleResponse?.messages[1]?.content as string;
+    console.log("res", titleResponse);
 
     const newProject = await prisma.project.create({
       data: {
@@ -43,6 +46,7 @@ export const initProject = async (req: Request, res: Response) => {
         userId: req.user.id,
       },
     });
+    console.log("new project created", newProject);
 
     await prisma.chatHistory.create({
       data: {
@@ -51,6 +55,7 @@ export const initProject = async (req: Request, res: Response) => {
         content: prompt,
       },
     });
+    console.log("chat history created");
 
     const job = await prisma.job.create({
       data: {
@@ -60,7 +65,16 @@ export const initProject = async (req: Request, res: Response) => {
       },
     });
 
+    console.log("job created", job);
+
     const sandbox = await sandboxManager.createSandbox(newProject.id);
+    await sandbox.commands
+      .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
+        timeoutMs: 2 * 60 * 1000,
+      })
+      .catch((error) => {
+        console.error("[api] Error starting dev server:", error);
+      }); // 2 min timeout
     redis.set(
       `sandbox-${newProject.id}`,
       JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
