@@ -1,9 +1,6 @@
-"use client";
-
+import { ArrowRight, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { useState } from "react";
-import { Button } from "./ui/button";
 
 interface HeroProps {
     prompt: string;
@@ -12,120 +9,77 @@ interface HeroProps {
     loading?: boolean;
 }
 
-import { useRef, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-
 export function Hero({ prompt, setPrompt, onSubmit, loading }: HeroProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    // Auto-resize textarea
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
         }
     }, [prompt]);
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            onSubmit(e as unknown as React.FormEvent);
+            onSubmit(e);
         }
     };
-    const [isFocused, setIsFocused] = useState(false);
 
     return (
-        <section className="relative flex flex-col items-center justify-center min-h-[90vh] w-full px-4 overflow-hidden pt-20">
-            {/* Background Gradients */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] -z-10 pointer-events-none mix-blend-screen" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-purple-500/10 rounded-full blur-[100px] -z-10 pointer-events-none mix-blend-screen" />
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-16 pb-12 flex flex-col items-center gap-8">
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="flex items-center gap-2 mb-8 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 backdrop-blur-md hover:bg-white/10 transition-colors"
-            >
-                <Sparkles className="size-4 text-indigo-400" />
-                <span className="text-sm font-medium text-indigo-100">AI-Powered Website Builder</span>
-            </motion.div>
+            <div className="text-center space-y-2">
+                <h1 className="text-4xl sm:text-5xl font-medium tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-zinc-400">
+                    What will you create?
+                </h1>
+                <p className="text-secondary font-light text-sm">
+                    Describe your vision. Bloom handles the code.
+                </p>
+            </div>
 
-            <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-5xl md:text-7xl font-bold text-center mb-6 tracking-tight max-w-5xl leading-[1.1]"
-            >
-                Build <span className="text-white">something</span> <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-[length:200%_auto] animate-shimmer">extraordinary</span>
-            </motion.h1>
+            <div className="w-full max-w-2xl relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-700"></div>
+                <div className="relative w-full bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-white/5 group-focus-within:ring-white/10 transition-all">
+                    <textarea
+                        ref={textareaRef}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="sm:text-lg placeholder-zinc-500 min-h-[7rem] resize-none focus:outline-none leading-relaxed text-base font-light text-white bg-transparent w-full pt-4 pr-5 pb-4 pl-5"
+                        placeholder="Build a dashboard for a finance app with charts..."
+                        disabled={loading}
+                    />
+                    <div className="px-3 pb-3 pt-2 flex items-center justify-end border-t border-white/5">
 
-            <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-lg md:text-xl text-muted-foreground text-center max-w-2xl mb-12 leading-relaxed"
-            >
-                Create stunning websites in seconds by simply chatting with Bloom.
-                Transform your ideas into reality with the power of modern AI.
-            </motion.p>
-
-            {/* Input Box */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="w-full max-w-2xl px-4"
-            >
-                <div
-                    className={`
-                relative flex items-center bg-[#18181b]/80 border transition-all duration-300 rounded-2xl p-2 shadow-2xl
-                ${isFocused ? "border-indigo-500/50 shadow-indigo-500/20 ring-1 ring-indigo-500/20" : "border-white/10 group hover:border-white/20"}
-                backdrop-blur-xl
-            `}
-                >
-                    <form className="flex-1 flex items-end gap-2" onSubmit={onSubmit}>
-                        <textarea
-                            ref={textareaRef}
-                            className="flex-1 bg-transparent text-white placeholder-muted-foreground outline-none text-lg px-4 py-3 min-h-[3rem] max-h-[200px] resize-none overflow-y-auto"
-                            placeholder="Describe your dream website..."
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onFocus={() => setIsFocused(true)}
-                            onBlur={() => setIsFocused(false)}
-                            rows={1}
-                        />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            className={`
-                    h-12 w-12 rounded-xl transition-all duration-300 shadow-none mb-1
-                    ${prompt ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-white/5 text-muted-foreground cursor-not-allowed"}
-                `}
-                            disabled={!prompt || loading}
-                        >
-                            {loading ? (
-                                <Loader2 className="size-5 animate-spin" />
-                            ) : (
-                                <ArrowRight className="size-5" />
-                            )}
-                        </Button>
-                    </form>
-                </div>
-
-                {/* Suggested Prompts */}
-                <div className="flex flex-wrap justify-center gap-3 mt-8">
-                    {["Portfolio for design agency", "SaaS landing page", "E-commerce dashboard"].map((p, i) => (
                         <button
-                            key={i}
-                            className="text-sm text-muted-foreground hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 px-4 py-2 rounded-full transition-colors cursor-pointer"
-                            onClick={() => setPrompt(p)}
+                            onClick={onSubmit}
+                            disabled={!prompt || loading}
+                            className={`group/btn flex items-center gap-2 bg-white text-black px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] ${!prompt || loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-200 cursor-pointer'}`}
                         >
-                            {p}
+                            <span>{loading ? "Generating..." : "Generate"}</span>
+                            {loading ? (
+                                <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                                <ArrowRight className="size-4 group-hover/btn:translate-x-0.5 transition-transform" />
+                            )}
                         </button>
-                    ))}
+                    </div>
                 </div>
-            </motion.div>
-        </section>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2 opacity-70">
+                {["Landing Page", "E-commerce", "SaaS Pricing", "Portfolio", "Dashboard"].map((chip) => (
+                    <button
+                        key={chip}
+                        onClick={() => setPrompt(chip)}
+                        className="px-2.5 py-1 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                    >
+                        {chip}
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 }

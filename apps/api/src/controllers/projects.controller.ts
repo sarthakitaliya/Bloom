@@ -7,34 +7,12 @@ import { builderQueue, connection as redis } from "@bloom/queue";
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
-    const { visibility, filter } = req.query;
-    if (
-      visibility &&
-      visibility !== ProjectVisibility.PUBLIC &&
-      visibility !== ProjectVisibility.PRIVATE
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid visibility value",
-      } as ApiResponse<null>);
-    }
+    const { filter } = req.query;
 
-    if (visibility === ProjectVisibility.PUBLIC && filter !== "mine") {
+    if (filter === "mine") {
       const projects = await prisma.project.findMany({
         where: {
-          visibility: ProjectVisibility.PUBLIC,
-          userId: {
-            not: req.user.id,
-          },
-        },
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true,
-              image: true,
-            },
-          },
+          userId: req.user.id,
         },
         orderBy: {
           createdAt: "desc",
@@ -48,8 +26,18 @@ export const getProjects = async (req: Request, res: Response) => {
     } else {
       const projects = await prisma.project.findMany({
         where: {
-          userId: req.user.id,
-          visibility: visibility as ProjectVisibility,
+          visibility: ProjectVisibility.PUBLIC,
+          userId: {
+            not: req.user.id,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",

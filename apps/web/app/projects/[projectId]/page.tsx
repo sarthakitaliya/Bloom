@@ -15,6 +15,7 @@ import {
   Eye,
   PanelLeftClose,
   PanelLeftOpen,
+  PanelLeft,
   Terminal,
   ExternalLink,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "../../../lib/utils";
 import { useSession } from "../../../lib/auth-client";
+import { toast } from "sonner";
 
 interface Message {
   id?: string;
@@ -47,13 +49,15 @@ export default function ProjectPage({
   const [messages, setMessages] = useState<Message[]>([]);
   const [url, setUrl] = useState("");
   const [input, setInput] = useState("");
-  const [leftWidth, setLeftWidth] = useState(30); // Default to smaller chat width
+  const [leftWidth, setLeftWidth] = useState(30);
   const [dragging, setDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<"Preview" | "Editor">("Preview");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragRectRef = useRef<DOMRect | null>(null);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -124,7 +128,7 @@ export default function ProjectPage({
         socket.on("error-message", (message: string) => {
           console.error("Received ERROR from socket:", message);
           setProcessing(false);
-          // TODO: Handle error display in UI properly
+          toast.error(`Error: ${message}`);
           setMessages((prevMessages) => [
             ...prevMessages,
             { from: "AGENT", content: `Error: ${message}` },
@@ -132,6 +136,7 @@ export default function ProjectPage({
         });
       } catch (error) {
         console.error("Error fetching project data:", error);
+        toast.error("Failed to load project details.");
       } finally {
         setLoading(false);
       }
@@ -152,40 +157,40 @@ export default function ProjectPage({
     e.preventDefault();
     if (!input.trim()) return;
 
-    const tempInput = input;
-    setInput(""); // Optimistic clear
+    setInput("");
     setProcessing(true);
-    setMessages((prev) => [...prev, { from: "USER", content: tempInput }]);
+    setMessages((prev) => [...prev, { from: "USER", content: input }]);
 
     try {
       await api.post(`/conversations`, {
         projectId: projectId,
-        prompt: tempInput,
+        prompt: input,
       });
     } catch (error) {
       console.error("Error sending message:", error);
       setProcessing(false);
-      // Revert if needed, but for now just log
     }
   };
 
-  // Drag logic
   const handleMouseDown = React.useCallback((_e: React.MouseEvent) => {
     setDragging(true);
     document.body.style.cursor = "col-resize";
+    if (containerRef.current) {
+      dragRectRef.current = containerRef.current.getBoundingClientRect();
+    }
   }, []);
 
   const handleMouseUp = React.useCallback(() => {
     setDragging(false);
     document.body.style.cursor = "";
+    dragRectRef.current = null;
   }, []);
 
   const handleMouseMove = React.useCallback(
     (e: MouseEvent) => {
-      if (!dragging) return;
-      const container = document.getElementById("split-container");
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
+      if (!dragging || !dragRectRef.current) return;
+
+      const rect = dragRectRef.current;
       let percent = ((e.clientX - rect.left) / rect.width) * 100;
       percent = Math.max(15, Math.min(60, percent)); // Limits
       setLeftWidth(percent);
@@ -219,7 +224,7 @@ export default function ProjectPage({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (input.trim() && !processing) {
+      if (input.trim() && !processing && !loading) {
         handleSend(e as unknown as React.FormEvent);
       }
     }
@@ -227,19 +232,30 @@ export default function ProjectPage({
 
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
-      {/* Header (Simplified for Workspace) */}
       <header className="h-14 flex items-center px-4 border-b border-white/5 bg-[#0a0a0a] justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-white"
+            className="text-zinc-400 hover:text-zinc-50 hover:bg-white/5 transition-colors cursor-pointer"
             onClick={() => router.push("/")}
           >
             <ArrowLeft className="size-4" />
           </Button>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-white">Project Workspace</span>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("text-zinc-400 hover:text-zinc-50 hover:bg-white/5 transition-colors cursor-pointer", isSidebarCollapsed && "text-zinc-50 bg-white/5")}
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          >
+            <PanelLeft className="size-4" />
+          </Button>
+
+          <div className="flex items-center gap-2 border-l border-white/5 pl-3">
+            <span className="font-semibold text-white truncate max-w-[200px] lg:max-w-md">
+              {project?.title || "Project Workspace"}
+            </span>
             {
               !loading &&
               project &&
@@ -261,7 +277,7 @@ export default function ProjectPage({
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-white cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-50 hover:bg-white/5 transition-colors cursor-pointer"
               onClick={() => window.open(url, "_blank")}
               title="Open in new tab"
             >
@@ -269,14 +285,14 @@ export default function ProjectPage({
             </Button>
           )}
 
-          <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/5">
+          <div className="flex items-center gap-1 bg-zinc-900/50 rounded-lg p-1 border border-white/5">
             <button
               onClick={() => setActiveTab("Preview")}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                "flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer w-28 shrink-0",
                 activeTab === "Preview"
-                  ? "bg-primary/20 text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+                  ? "bg-zinc-800 text-zinc-50 shadow-sm ring-1 ring-white/10"
+                  : "text-zinc-400 hover:text-zinc-50 hover:bg-white/5"
               )}
             >
               <Eye className="size-3.5" />
@@ -285,10 +301,10 @@ export default function ProjectPage({
             <button
               onClick={() => setActiveTab("Editor")}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                "flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer w-28 shrink-0",
                 activeTab === "Editor"
-                  ? "bg-primary/20 text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+                  ? "bg-zinc-800 text-zinc-50 shadow-sm ring-1 ring-white/10"
+                  : "text-zinc-400 hover:text-zinc-50 hover:bg-white/5"
               )}
             >
               <Code2 className="size-3.5" />
@@ -299,6 +315,7 @@ export default function ProjectPage({
       </header>
 
       <div
+        ref={containerRef}
         id="split-container"
         className="flex-1 flex relative overflow-hidden"
       >
@@ -308,23 +325,10 @@ export default function ProjectPage({
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: `${leftWidth}%`, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              transition={{ duration: dragging ? 0 : 0.2, ease: "easeInOut" }}
               className="h-full flex flex-col bg-[#0a0a0a] border-r border-white/5 max-w-[60vw] min-w-[250px]"
             >
-              <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                  <Terminal className="size-4" />
-                  <span>Terminal & Chat</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setIsSidebarCollapsed(true)}
-                >
-                  <PanelLeftClose className="size-3.5" />
-                </Button>
-              </div>
+
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg, idx) => (
@@ -341,7 +345,7 @@ export default function ProjectPage({
                       className={cn(
                         "px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm",
                         msg.from === "USER"
-                          ? "bg-primary text-primary-foreground rounded-tr-sm"
+                          ? "bg-zinc-100 text-zinc-950 rounded-tr-sm"
                           : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"
                       )}
                     >
@@ -383,12 +387,13 @@ export default function ProjectPage({
                         session.user.id !== project.userId)
                     }
                     placeholder={
-                      !loading &&
-                        project &&
-                        session?.user?.id &&
-                        session.user.id !== project.userId
-                        ? "View Only Mode – You cannot send messages here."
-                        : "Ask Bloom to make changes..."
+                      loading
+                        ? "Loading..."
+                        : project &&
+                          session?.user?.id &&
+                          session.user.id !== project.userId
+                          ? "View Only Mode – You cannot send messages here."
+                          : "Ask Bloom to make changes..."
                     }
                     className="w-full bg-transparent border-0 focus:ring-0 resize-none outline-none text-sm px-4 py-3 min-h-[48px] max-h-[200px] overflow-y-auto text-gray-200 placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ height: "48px" }}
@@ -396,10 +401,11 @@ export default function ProjectPage({
                   <Button
                     type="submit"
                     size="icon"
-                    className="absolute right-2 bottom-2 w-8 h-8 bg-transparent hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="absolute right-2 bottom-2 w-8 h-8 bg-transparent hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     disabled={
                       !input.trim() ||
                       processing ||
+                      loading ||
                       (project && session?.user?.id !== project.userId)
                     }
                   >
@@ -411,17 +417,6 @@ export default function ProjectPage({
           )}
         </AnimatePresence>
 
-        {isSidebarCollapsed && (
-          <div className="absolute top-4 left-4 z-20">
-            <Button
-              size="icon"
-              className="bg-background border border-white/10 shadow-lg hover:bg-white/5"
-              onClick={() => setIsSidebarCollapsed(false)}
-            >
-              <PanelLeftOpen className="size-4" />
-            </Button>
-          </div>
-        )}
 
         {!isSidebarCollapsed && (
           <div
@@ -437,7 +432,7 @@ export default function ProjectPage({
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
-            className="h-full w-full"
+            className={cn("h-full w-full", dragging && "pointer-events-none select-none")}
           >
             {activeTab === "Preview" ? (
               <Preview url={url} />

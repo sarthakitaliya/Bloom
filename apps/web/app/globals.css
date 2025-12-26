@@ -1,178 +1,54 @@
 @import "tailwindcss";
 
 @theme {
-    --color-border: hsl(var(--border));
-    --color-input: hsl(var(--input));
-    --color-ring: hsl(var(--ring));
-    --color-background: hsl(var(--background));
-    --color-foreground: hsl(var(--foreground));
+    --color-background: #09090b;
+    --color-surface: #18181b;
+    --color-border: #27272a;
+    --color-primary: #fafafa;
+    --color-secondary: #a1a1aa;
+    --color-accent: #6366f1;
 
-    --color-primary: hsl(var(--primary));
-    --color-primary-foreground: hsl(var(--primary-foreground));
+    --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-display: var(--font-geist-sans), var(--font-inter), sans-serif;
 
-    --color-secondary: hsl(var(--secondary));
-    --color-secondary-foreground: hsl(var(--secondary-foreground));
-
-    --color-destructive: hsl(var(--destructive));
-    --color-destructive-foreground: hsl(var(--destructive-foreground));
-
-    --color-muted: hsl(var(--muted));
-    --color-muted-foreground: hsl(var(--muted-foreground));
-
-    --color-accent: hsl(var(--accent));
-    --color-accent-foreground: hsl(var(--accent-foreground));
-
-    --color-popover: hsl(var(--popover));
-    --color-popover-foreground: hsl(var(--popover-foreground));
-
-    --color-card: hsl(var(--card));
-    --color-card-foreground: hsl(var(--card-foreground));
-
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
-
-    --animate-accordion-down: accordion-down 0.2s ease-out;
-    --animate-accordion-up: accordion-up 0.2s ease-out;
-    --animate-shimmer: shimmer 2s linear infinite;
-
-    @keyframes accordion-down {
-        from {
-            height: 0;
-        }
-
-        to {
-            height: var(--radix-accordion-content-height);
-        }
-    }
-
-    @keyframes accordion-up {
-        from {
-            height: var(--radix-accordion-content-height);
-        }
-
-        to {
-            height: 0;
-        }
-    }
-
-    @keyframes shimmer {
-        from {
-            background-position: 0 0;
-        }
-
-        to {
-            background-position: -200% 0;
-        }
-    }
-}
-
-@utility container {
-    margin-inline: auto;
-    padding-inline: 2rem;
-
-    @media (width >=--theme(--breakpoint-sm)) {
-        max-width: none;
-    }
-
-    @media (width >=1400px) {
-        max-width: 1400px;
-    }
+    --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Base styles */
 :root {
-    /* Lovable Dark Theme Inspired */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 4.5%;
-    /* Slightly lighter than bg */
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 263 70% 50%;
-    /* Vivid Violet */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 240 5% 12%;
-    /* Dark grey for secondary actions */
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 263 70% 50%;
-    /* Same as primary for consistency in accents */
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263 70% 50%;
-    /* Primary color ring */
-
-    --radius: 0.75rem;
-    /* Rounded corners */
-}
-
-/* Optional Light Mode (not default, but supported) */
-@media (prefers-color-scheme: light) {
-    :root {
-        /* Keep dark mode as default for the "Lovable" vibe, user can enable light if they really want via class, but usually these AI apps are dark-first. 
-         However, for correctness I should provide light values or just override everything to dark if strictly requested. 
-         "Bloom" implies growth/light/nature, but "Lovable" is dark. 
-         I'll stick to Dark Default. 
-      */
-    }
+    color-scheme: dark;
 }
 
 body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-white;
-    /* Premium font smoothing */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-background text-primary antialiased selection:bg-indigo-500/20 selection:text-indigo-200;
+    font-family: var(--font-inter), sans-serif;
 }
 
-/* Custom Glass Utilities */
-@utility glass {
-    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+/* Custom Utilities */
+@utility bg-grid {
+    background-image: linear-gradient(to right, #27272a 1px, transparent 1px),
+        linear-gradient(to bottom, #27272a 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
 }
 
-@utility glass-hover {
-    @apply hover:bg-white/10 transition-colors duration-200;
-}
-
-/* Custom Text Gradient */
-@utility text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-400;
-}
-
-@utility text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400;
-    /* Pinkish-Purple */
-}
-
-
-/* Custom Scrollbar for Dark Theme */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
-    border-radius: 4px;
+    background: #27272a;
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a3a;
+    background: #3f3f46;
 }
