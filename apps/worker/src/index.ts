@@ -115,6 +115,10 @@ const worker = new Worker(
           },
         });
         if (!snapshotExists || !snapshotExists.currentSnapshotS3Key) {
+          connection.publish(
+            projectId,
+            JSON.stringify({ type: "ERROR", message: "No snapshot found" })
+          );
           throw new Error("No snapshot found to restore");
         }
 
@@ -125,6 +129,10 @@ const worker = new Worker(
           url
         );
         if (!restoreResult.ok) {
+          connection.publish(
+            projectId,
+            JSON.stringify({ type: "ERROR", message: "Snapshot restore failed" })
+          );
           throw new Error("Snapshot restore failed");
         }
         console.log(
@@ -165,6 +173,10 @@ const worker = new Worker(
         where: { id },
         data: { status: "FAILED" },
       });
+      connection.publish(
+        projectId,
+        JSON.stringify({ type: "ERROR", message: "Something went wrong while processing the job" })
+      );
       throw error;
     }
   },

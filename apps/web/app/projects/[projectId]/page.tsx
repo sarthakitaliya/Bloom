@@ -2,12 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import api from "../../../lib/axios";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 import initializeSocket from "../../../lib/socket";
 import Preview from "../../../components/Preview";
 import CodeView from "../../../components/CodeView";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import {
   ArrowLeft,
   Loader2,
@@ -17,10 +16,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Terminal,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "../../../lib/utils";
+import { useSession } from "../../../lib/auth-client";
 
 interface Message {
   id?: string;
@@ -38,8 +39,10 @@ export default function ProjectPage({
 }) {
   const { projectId } = React.use(params);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [url, setUrl] = useState("");
@@ -81,6 +84,7 @@ export default function ProjectPage({
       try {
         const { data: projectData } = await api.get(`/projects/${projectId}`);
         if (projectData.success) {
+          setProject(projectData.data);
           const { data: conversationData } = await api.get(
             `/conversations/${projectId}`
           );
@@ -115,6 +119,15 @@ export default function ProjectPage({
           setMessages((prevMessages) => [
             ...prevMessages,
             { from: "AGENT", content: message },
+          ]);
+        });
+        socket.on("error-message", (message: string) => {
+          console.error("Received ERROR from socket:", message);
+          setProcessing(false);
+          // TODO: Handle error display in UI properly
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { from: "AGENT", content: `Error: ${message}` },
           ]);
         });
       } catch (error) {
@@ -157,23 +170,28 @@ export default function ProjectPage({
   };
 
   // Drag logic
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = React.useCallback((_e: React.MouseEvent) => {
     setDragging(true);
     document.body.style.cursor = "col-resize";
-  };
-  const handleMouseUp = () => {
+  }, []);
+
+  const handleMouseUp = React.useCallback(() => {
     setDragging(false);
     document.body.style.cursor = "";
-  };
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!dragging) return;
-    const container = document.getElementById("split-container");
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    let percent = ((e.clientX - rect.left) / rect.width) * 100;
-    percent = Math.max(15, Math.min(60, percent)); // Limits
-    setLeftWidth(percent);
-  };
+  }, []);
+
+  const handleMouseMove = React.useCallback(
+    (e: MouseEvent) => {
+      if (!dragging) return;
+      const container = document.getElementById("split-container");
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      let percent = ((e.clientX - rect.left) / rect.width) * 100;
+      percent = Math.max(15, Math.min(60, percent)); // Limits
+      setLeftWidth(percent);
+    },
+    [dragging]
+  );
 
   useEffect(() => {
     if (dragging) {
@@ -187,7 +205,7 @@ export default function ProjectPage({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragging]);
+  }, [dragging, handleMouseMove, handleMouseUp]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -222,38 +240,61 @@ export default function ProjectPage({
           </Button>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-white">Project Workspace</span>
+            {
+              !loading &&
+              project &&
+              session?.user?.id &&
+              session.user.id !== project.userId && (
+                <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 text-[10px] font-medium border border-yellow-500/20">
+                  Read Only
+                </span>
+              )
+            }
             {loading && (
               <Loader2 className="size-3 animate-spin text-muted-foreground" />
             )}
           </div>
         </div>
 
-        {/* View Toggles */}
-        <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/5">
-          <button
-            onClick={() => setActiveTab("Preview")}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-              activeTab === "Preview"
-                ? "bg-primary/20 text-primary shadow-sm"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
-            )}
-          >
-            <Eye className="size-3.5" />
-            Preview
-          </button>
-          <button
-            onClick={() => setActiveTab("Editor")}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-              activeTab === "Editor"
-                ? "bg-primary/20 text-primary shadow-sm"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
-            )}
-          >
-            <Code2 className="size-3.5" />
-            Code
-          </button>
+        <div className="flex items-center gap-4">
+          {url && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-white cursor-pointer"
+              onClick={() => window.open(url, "_blank")}
+              title="Open in new tab"
+            >
+              <ExternalLink className="size-4" />
+            </Button>
+          )}
+
+          <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/5">
+            <button
+              onClick={() => setActiveTab("Preview")}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                activeTab === "Preview"
+                  ? "bg-primary/20 text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Eye className="size-3.5" />
+              Preview
+            </button>
+            <button
+              onClick={() => setActiveTab("Editor")}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                activeTab === "Editor"
+                  ? "bg-primary/20 text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Code2 className="size-3.5" />
+              Code
+            </button>
+          </div>
         </div>
       </header>
 
@@ -261,7 +302,6 @@ export default function ProjectPage({
         id="split-container"
         className="flex-1 flex relative overflow-hidden"
       >
-        {/* Left Panel: Chat */}
         <AnimatePresence initial={false}>
           {!isSidebarCollapsed && (
             <motion.div
@@ -316,7 +356,9 @@ export default function ProjectPage({
                   <div className="flex flex-col gap-1 max-w-[90%] mr-auto items-start">
                     <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm bg-white/10 text-gray-200 rounded-tl-sm border border-white/5 flex items-center gap-2">
                       <Loader2 className="size-3 animate-spin" />
-                      <span className="text-xs text-muted-foreground">Thinking...</span>
+                      <span className="text-xs text-muted-foreground">
+                        Thinking...
+                      </span>
                     </div>
                   </div>
                 )}
@@ -333,15 +375,33 @@ export default function ProjectPage({
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask Bloom to make changes..."
-                    className="w-full bg-transparent border-0 focus:ring-0 resize-none outline-none text-sm px-4 py-3 min-h-[48px] max-h-[200px] overflow-y-auto text-gray-200 placeholder:text-muted-foreground"
+                    disabled={
+                      loading ||
+                      (!loading &&
+                        project &&
+                        session?.user?.id &&
+                        session.user.id !== project.userId)
+                    }
+                    placeholder={
+                      !loading &&
+                        project &&
+                        session?.user?.id &&
+                        session.user.id !== project.userId
+                        ? "View Only Mode – You cannot send messages here."
+                        : "Ask Bloom to make changes..."
+                    }
+                    className="w-full bg-transparent border-0 focus:ring-0 resize-none outline-none text-sm px-4 py-3 min-h-[48px] max-h-[200px] overflow-y-auto text-gray-200 placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ height: "48px" }}
                   />
                   <Button
                     type="submit"
                     size="icon"
                     className="absolute right-2 bottom-2 w-8 h-8 bg-transparent hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!input.trim() || processing}
+                    disabled={
+                      !input.trim() ||
+                      processing ||
+                      (project && session?.user?.id !== project.userId)
+                    }
                   >
                     <Send className="size-4" />
                   </Button>
@@ -351,7 +411,6 @@ export default function ProjectPage({
           )}
         </AnimatePresence>
 
-        {/* Collapsed State Toggle */}
         {isSidebarCollapsed && (
           <div className="absolute top-4 left-4 z-20">
             <Button
@@ -364,7 +423,6 @@ export default function ProjectPage({
           </div>
         )}
 
-        {/* Resizer Handle */}
         {!isSidebarCollapsed && (
           <div
             className="w-1 h-full bg-white/5 hover:bg-primary/50 cursor-col-resize transition-colors z-10 flex items-center justify-center group"
@@ -374,7 +432,6 @@ export default function ProjectPage({
           </div>
         )}
 
-        {/* Right Panel: Content */}
         <div className="flex-1 bg-[#050505] p-4 h-full overflow-hidden">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}

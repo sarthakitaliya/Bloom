@@ -9,11 +9,13 @@ interface HeroProps {
     prompt: string;
     setPrompt: (value: string) => void;
     onSubmit: (e: React.FormEvent) => void;
+    loading?: boolean;
 }
 
 import { useRef, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
-export function Hero({ prompt, setPrompt, onSubmit }: HeroProps) {
+export function Hero({ prompt, setPrompt, onSubmit, loading }: HeroProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -100,9 +102,13 @@ export function Hero({ prompt, setPrompt, onSubmit }: HeroProps) {
                     h-12 w-12 rounded-xl transition-all duration-300 shadow-none mb-1
                     ${prompt ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-white/5 text-muted-foreground cursor-not-allowed"}
                 `}
-                            disabled={!prompt}
+                            disabled={!prompt || loading}
                         >
-                            <ArrowRight className="size-5" />
+                            {loading ? (
+                                <Loader2 className="size-5 animate-spin" />
+                            ) : (
+                                <ArrowRight className="size-5" />
+                            )}
                         </Button>
                     </form>
                 </div>

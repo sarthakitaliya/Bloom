@@ -10,7 +10,6 @@ export function Header() {
     const { data: session } = useSession();
     const [authPopup, setAuthPopup] = useState(false);
 
-    // Simple auth implementation for now
     const handleLogIn = async () => {
         try {
             await signIn.social({ provider: "google" });

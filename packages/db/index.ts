@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ProjectVisibility } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+const prisma = new PrismaClient();
+export { ProjectVisibility, prisma };
 

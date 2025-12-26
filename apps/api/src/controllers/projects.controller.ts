@@ -1,4 +1,4 @@
-import { prisma } from "@bloom/db";
+import { prisma, ProjectVisibility } from "@bloom/db";
 import type { Request, Response } from "express";
 import type { ApiResponse } from "../types/ApiResponse";
 import { agentInvoke, titleAgent } from "@bloom/agent";
@@ -7,14 +7,60 @@ import { builderQueue, connection as redis } from "@bloom/queue";
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
-    const projects = await prisma.project.findMany({
-      where: {
-        userId: req.user.id,
-      },
-    });
-    res
-      .status(200)
-      .json({ success: true, data: projects } as ApiResponse<typeof projects>);
+    const { visibility, filter } = req.query;
+    if (
+      visibility &&
+      visibility !== ProjectVisibility.PUBLIC &&
+      visibility !== ProjectVisibility.PRIVATE
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid visibility value",
+      } as ApiResponse<null>);
+    }
+
+    if (visibility === ProjectVisibility.PUBLIC && filter !== "mine") {
+      const projects = await prisma.project.findMany({
+        where: {
+          visibility: ProjectVisibility.PUBLIC,
+          userId: {
+            not: req.user.id,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      return res
+        .status(200)
+        .json({ success: true, data: projects } as ApiResponse<
+          typeof projects
+        >);
+    } else {
+      const projects = await prisma.project.findMany({
+        where: {
+          userId: req.user.id,
+          visibility: visibility as ProjectVisibility,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      res
+        .status(200)
+        .json({ success: true, data: projects } as ApiResponse<
+          typeof projects
+        >);
+    }
   } catch (error) {
     res
       .status(500)
@@ -83,6 +129,7 @@ export const initProject = async (req: Request, res: Response) => {
     );
     console.log("from API", sandbox.sandboxId);
 
+    //TODO: remove obliterate in production
     await builderQueue.obliterate({ force: true });
     await builderQueue.add(
       "builder-queue",
@@ -115,7 +162,10 @@ export const getProjectById = async (req: Request, res: Response) => {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: req.user.id,
+        OR: [
+          { userId: req.user.id },
+          { visibility: ProjectVisibility.PUBLIC },
+        ],
       },
     });
     if (!project) {
@@ -137,11 +187,8 @@ export const getProjectById = async (req: Request, res: Response) => {
       if (job && ["QUEUED", "ACTIVE"].includes(job.status)) {
         return res.status(200).json({
           success: true,
-          data: {
-            project,
-            job,
-          },
-        } as ApiResponse<{ project: typeof project; job: typeof job }>);
+          data: project
+        } as ApiResponse<typeof project>);
       }
       return res.status(404).json({
         success: false,
