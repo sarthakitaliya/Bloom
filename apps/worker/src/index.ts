@@ -18,8 +18,11 @@ const worker = new Worker(
   "builder-queue",
   async (job: Job<Payload>) => {
     console.log(`Processing job ${job.id} of type ${job.name}`);
+    console.log("job id and data:", job.id, job.data);
     const { projectId, prompt, sandboxId, jobType, id } = job.data;
     console.log("project id:", projectId);
+    console.log("job Id, worker ID", id, job.id);
+    
 
     try {
       const client = await sandboxManager.getSandbox(projectId);
@@ -70,6 +73,10 @@ const worker = new Worker(
           projectId
         );
         if (!snapshotResult.ok) {
+          connection.publish(
+            projectId,
+            JSON.stringify({ type: "ERROR", message: "Snapshot creation failed" })
+          );
           throw new Error("Snapshot creation failed");
         }
         // console.log(
@@ -85,6 +92,10 @@ const worker = new Worker(
           projectId
         );
         if (!snapshotResult.ok) {
+          connection.publish(
+            projectId,
+            JSON.stringify({ type: "ERROR", message: "Snapshot update failed" })
+          );
           throw new Error("Snapshot update failed");
         }
         const lastMsg = response.messages[response.messages.length - 1];
