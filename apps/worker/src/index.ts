@@ -22,11 +22,21 @@ const worker = new Worker(
     const { projectId, prompt, sandboxId, jobType, id } = job.data;
     console.log("project id:", projectId);
     console.log("job Id, worker ID", id, job.id);
-    
 
     try {
       const client = await sandboxManager.getSandbox(projectId);
       if (!client) throw new Error("Sandbox client not found");
+      const jobRecord = await prisma.job.findUnique({
+        where: { id },
+      });
+      if (!jobRecord) {
+        console.log("[worker] Job record not found in DB");
+        connection.publish(
+          projectId,
+          JSON.stringify({ type: "ERROR", message: "Job record not found" })
+        );
+        throw new Error("Job record not found in DB");
+      }
       await prisma.job.update({
         where: { id },
         data: { status: "ACTIVE" },
@@ -36,7 +46,7 @@ const worker = new Worker(
 
         const response = await agentInvoke(prompt, projectId);
         console.log("[worker] Agent response:", response);
-       
+
         const lastMsg = response.messages[response.messages.length - 1];
         const agentResponse =
           typeof lastMsg?.content === "string"
@@ -75,7 +85,10 @@ const worker = new Worker(
         if (!snapshotResult.ok) {
           connection.publish(
             projectId,
-            JSON.stringify({ type: "ERROR", message: "Snapshot creation failed" })
+            JSON.stringify({
+              type: "ERROR",
+              message: "Snapshot creation failed",
+            })
           );
           throw new Error("Snapshot creation failed");
         }
@@ -142,7 +155,10 @@ const worker = new Worker(
         if (!restoreResult.ok) {
           connection.publish(
             projectId,
-            JSON.stringify({ type: "ERROR", message: "Snapshot restore failed" })
+            JSON.stringify({
+              type: "ERROR",
+              message: "Snapshot restore failed",
+            })
           );
           throw new Error("Snapshot restore failed");
         }
@@ -186,7 +202,10 @@ const worker = new Worker(
       });
       connection.publish(
         projectId,
-        JSON.stringify({ type: "ERROR", message: "Something went wrong while processing the job" })
+        JSON.stringify({
+          type: "ERROR",
+          message: "Something went wrong while processing the job",
+        })
       );
       throw error;
     }
