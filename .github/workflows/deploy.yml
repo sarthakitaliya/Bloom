@@ -17,8 +17,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
-
             # Load Node / pnpm
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
@@ -28,6 +26,11 @@ jobs:
             git pull origin main
 
             pnpm install
+
+            # Regenerate Prisma client with current DATABASE_URL
+            cd packages/db
+            pnpm dlx prisma@6.7.0 generate
+            cd ../..
 
             pnpm turbo run build
 
@@ -44,6 +47,8 @@ jobs:
             # Wait for processes to fully terminate
             sleep 2
 
+            echo "==> Starting services"
+            
             cd apps/api
             nohup node dist/src/index.js > /var/log/bloom-api.log 2>&1 &
 
@@ -55,5 +60,5 @@ jobs:
 
             cd ../web
             nohup pnpm start > /var/log/bloom-web.log 2>&1 &
-
+            
             echo "==> Deploy finished"
