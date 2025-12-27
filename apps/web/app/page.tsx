@@ -90,6 +90,10 @@ export default function Home() {
     }
   };
 
+  const handleDeleteProject = (projectId: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== projectId));
+  };
+
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-black text-white selection:bg-indigo-500/30">
       <Header authPopup={authPopup} setAuthPopup={setAuthPopup} />
@@ -143,7 +147,12 @@ export default function Home() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} isOwner={activeTab === "mine"} />
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      isOwner={activeTab === "mine"}
+                      onDelete={handleDeleteProject}
+                    />
                   ))}
 
                   {projects.length === 0 && (

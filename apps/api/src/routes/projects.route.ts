@@ -1,5 +1,6 @@
 import express, { type Router } from "express";
 import {
+  deleteProjectById,
   getFileContent,
   getFilesTree,
   getProjectById,
@@ -12,6 +13,7 @@ const router:Router = express.Router();
 router.get("/", getProjects);
 router.post("/", initProject);
 router.get("/:projectId", getProjectById);
+router.delete("/:projectId", deleteProjectById);
 router.get("/:projectId/files", getFilesTree);
 router.get("/:projectId/files/:filepath", getFileContent);
 router.post("/:projectId/extend-sandbox", getProjectById);

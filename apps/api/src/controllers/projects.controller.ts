@@ -238,6 +238,39 @@ export const getProjectById = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteProjectById = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        userId: req.user.id,
+      },
+    });
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      } as ApiResponse<null>);
+    }
+
+    await prisma.project.delete({
+      where: { id: project.id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Project deleted successfully",
+    } as ApiResponse<null>);
+  } catch (error) {
+    console.log("Error deleting project:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error" } as ApiResponse<null>);
+  }
+};
+
 export const extendSandbox = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;

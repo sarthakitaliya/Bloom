@@ -1,6 +1,9 @@
-import { ArrowUpRight, Copy, Heart } from "lucide-react";
+import { ArrowUpRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { api } from "../lib/axios";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ProjectCardProps {
     project: {
@@ -18,9 +21,12 @@ interface ProjectCardProps {
         };
     };
     isOwner?: boolean;
+    onDelete?: (projectId: string) => void;
 }
 
-export function ProjectCard({ project, isOwner = false }: ProjectCardProps) {
+export function ProjectCard({ project, isOwner = false, onDelete }: ProjectCardProps) {
+    const router = useRouter();
+
     // Generate a random-ish gradient based on project ID for the preview background
     const getGradient = (id: string) => {
         const hash = id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -32,6 +38,25 @@ export function ProjectCard({ project, isOwner = false }: ProjectCardProps) {
             "from-pink-500/5 to-rose-500/5",
         ];
         return colors[hash % colors.length];
+    };
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const toastId = toast.loading("Deleting project...");
+
+        try {
+            const response = await api.delete(`/projects/${project.id}`);
+            if (response.data.success) {
+                toast.success("Project deleted successfully", { id: toastId });
+                router.refresh(); // Refresh the page to update the list
+                onDelete?.(project.id);
+            }
+        } catch (error) {
+            console.error("Failed to delete project:", error);
+            toast.error("Failed to delete project", { id: toastId });
+        }
     };
 
     return (
@@ -52,9 +77,20 @@ export function ProjectCard({ project, isOwner = false }: ProjectCardProps) {
 
                 <div className="p-4 flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-sm font-medium text-zinc-200 truncate pr-2">{project.title}</h3>
-                        <div className="text-zinc-600 group-hover:text-white transition-colors">
-                            <ArrowUpRight size={16} />
+                        <h3 className="text-sm font-medium text-zinc-200 truncate pr-2 flex-1">{project.title}</h3>
+                        <div className="flex gap-2">
+                            {isOwner && (
+                                <button
+                                    onClick={handleDelete}
+                                    className="text-zinc-600 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                                    title="Delete project"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
+                            <div className="text-zinc-600 group-hover:text-white transition-colors p-1">
+                                <ArrowUpRight size={16} />
+                            </div>
                         </div>
                     </div>
 
