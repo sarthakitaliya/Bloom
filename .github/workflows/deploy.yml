@@ -27,22 +27,12 @@ jobs:
 
             pnpm install
 
-            # Regenerate Prisma client with current DATABASE_URL
-            cd packages/db
-            pnpm dlx prisma@6.7.0 generate
-            cd ../..
-
             pnpm turbo run build
 
             echo "==> Stop old processes"
             fuser -k 3000/tcp || true
             fuser -k 4040/tcp || true
             fuser -k 4000/tcp || true
-            
-            # Kill old worker processes (they don't use ports)
-            pkill -f "apps/worker/dist/src/index.js" || true
-            pkill -f "apps/api/dist/src/index.js" || true
-            pkill -f "apps/ws-server/dist/src/index.js" || true
             
             # Wait for processes to fully terminate
             sleep 2
