@@ -330,6 +330,8 @@ export default function ProjectPage({
             >
 
 
+
+
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg, idx) => (
                   <div
@@ -356,7 +358,7 @@ export default function ProjectPage({
                     </span>
                   </div>
                 ))}
-                {processing && (
+                {(processing || loading) && (
                   <div className="flex flex-col gap-1 max-w-[90%] mr-auto items-start">
                     <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm bg-white/10 text-gray-200 rounded-tl-sm border border-white/5 flex items-center gap-2">
                       <Loader2 className="size-3 animate-spin" />

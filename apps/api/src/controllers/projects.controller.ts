@@ -117,8 +117,6 @@ export const initProject = async (req: Request, res: Response) => {
     );
     console.log("from API", sandbox.sandboxId);
 
-    //TODO: remove obliterate in production
-    await builderQueue.obliterate({ force: true });
     await builderQueue.add(
       "builder-queue",
       {
