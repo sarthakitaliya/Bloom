@@ -113,7 +113,7 @@ export const initProject = async (req: Request, res: Response) => {
       `sandbox-${newProject.id}`,
       JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
       "EX",
-      60 * 60 * 1 // 1 hour expiration
+      60 * 9 
     );
     console.log("from API", sandbox.sandboxId);
 
@@ -185,7 +185,7 @@ export const getProjectById = async (req: Request, res: Response) => {
     try {
       const lastSeen = new Date(project.lastSeenAt);
       const now = new Date();
-      const EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes
+      const EXPIRATION_MS = 9 * 60 * 1000; // 9 minutes
       if (now.getTime() - lastSeen.getTime() > EXPIRATION_MS) {
         await redis.del(`sandbox-${project.id}`);
         const sandbox = await sandboxManager.createSandbox(project.id);
@@ -193,7 +193,7 @@ export const getProjectById = async (req: Request, res: Response) => {
           `sandbox-${project.id}`,
           JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
           "EX",
-          60 * 60 * 1 // 1 hour expiration
+          60 * 9
         );
         const job = await prisma.job.create({
           data: {
@@ -293,7 +293,7 @@ export const extendSandbox = async (req: Request, res: Response) => {
         `sandbox-${project.id}`,
         JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
         "EX",
-        60 * 60 * 1 // 1 hour expiration
+        60 * 9
       );
       const job = await prisma.job.create({
         data: {

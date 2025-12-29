@@ -13,10 +13,7 @@ import {
   Send,
   Code2,
   Eye,
-  PanelLeftClose,
-  PanelLeftOpen,
   PanelLeft,
-  Terminal,
   ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,8 +68,12 @@ export default function ProjectPage({
           const { data } = await api.post(
             `/projects/${projectId}/extend-sandbox`
           );
-          if (data.success && !data.restoring) {
-            // success
+          if (data.success && data.restoring) {
+            setLoading(true);
+          } else if (data.success && !data.restoring) {
+            setLoading(false);
+          }else if (!data.success) {
+            toast.error("Failed to extend sandbox session.");
           }
         } catch (error) {
           console.error("Error extending sandbox:", error);
@@ -246,7 +247,10 @@ export default function ProjectPage({
           <Button
             variant="ghost"
             size="icon"
-            className={cn("text-zinc-400 hover:text-zinc-50 hover:bg-white/5 transition-colors cursor-pointer", isSidebarCollapsed && "text-zinc-50 bg-white/5")}
+            className={cn(
+              "text-zinc-400 hover:text-zinc-50 hover:bg-white/5 transition-colors cursor-pointer",
+              isSidebarCollapsed && "text-zinc-50 bg-white/5"
+            )}
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           >
             <PanelLeft className="size-4" />
@@ -256,16 +260,14 @@ export default function ProjectPage({
             <span className="font-semibold text-white truncate max-w-[200px] lg:max-w-md">
               {project?.title || "Project Workspace"}
             </span>
-            {
-              !loading &&
+            {!loading &&
               project &&
               session?.user?.id &&
               session.user.id !== project.userId && (
                 <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 text-[10px] font-medium border border-yellow-500/20">
                   Read Only
                 </span>
-              )
-            }
+              )}
             {loading && (
               <Loader2 className="size-3 animate-spin text-muted-foreground" />
             )}
@@ -328,10 +330,6 @@ export default function ProjectPage({
               transition={{ duration: dragging ? 0 : 0.2, ease: "easeInOut" }}
               className="h-full flex flex-col bg-[#0a0a0a] border-r border-white/5 max-w-[60vw] min-w-[250px]"
             >
-
-
-
-
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg, idx) => (
                   <div
@@ -392,8 +390,8 @@ export default function ProjectPage({
                       loading
                         ? "Loading..."
                         : project &&
-                          session?.user?.id &&
-                          session.user.id !== project.userId
+                            session?.user?.id &&
+                            session.user.id !== project.userId
                           ? "View Only Mode – You cannot send messages here."
                           : "Ask Bloom to make changes..."
                     }
@@ -419,7 +417,6 @@ export default function ProjectPage({
           )}
         </AnimatePresence>
 
-
         {!isSidebarCollapsed && (
           <div
             className="w-1 h-full bg-white/5 hover:bg-primary/50 cursor-col-resize transition-colors z-10 flex items-center justify-center group"
@@ -434,7 +431,10 @@ export default function ProjectPage({
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
-            className={cn("h-full w-full", dragging && "pointer-events-none select-none")}
+            className={cn(
+              "h-full w-full",
+              dragging && "pointer-events-none select-none"
+            )}
           >
             {activeTab === "Preview" ? (
               <Preview url={url} />
