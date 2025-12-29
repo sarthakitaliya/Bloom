@@ -29,26 +29,8 @@ jobs:
 
             pnpm turbo run build
 
-            echo "==> Stop old processes"
-            fuser -k 3000/tcp || true
-            fuser -k 4040/tcp || true
-            fuser -k 4000/tcp || true
+            cd ..
             
-            # Wait for processes to fully terminate
-            sleep 2
-
-            echo "==> Starting services"
-            
-            cd apps/api
-            nohup node dist/src/index.js > /var/log/bloom-api.log 2>&1 &
-
-            cd ../ws-server
-            nohup node dist/src/index.js > /var/log/bloom-ws.log 2>&1 &
-
-            cd ../worker
-            nohup node dist/src/index.js > /var/log/bloom-worker.log 2>&1 &
-
-            cd ../web
-            nohup pnpm start > /var/log/bloom-web.log 2>&1 &
+            pm2 restart ecosystem.bloom.config.js
             
             echo "==> Deploy finished"
