@@ -70,13 +70,19 @@ export function Hero({ prompt, setPrompt, onSubmit, loading }: HeroProps) {
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 opacity-70">
-                {["Landing Page", "E-commerce", "SaaS Pricing", "Portfolio", "Dashboard"].map((chip) => (
+                {[
+                    { label: "Landing Page", prompt: "Build a modern landing page for a tech startup with a hero section, feature highlights, testimonials, and a call-to-action" },
+                    { label: "E-commerce", prompt: "Create an e-commerce product page with image gallery, size selector, add to cart button, and customer reviews section" },
+                    { label: "SaaS Dashboard", prompt: "Design a SaaS analytics dashboard with charts, stats cards, recent activity feed, and a sidebar navigation" },
+                    { label: "Portfolio", prompt: "Build a creative portfolio website for a designer with project showcases, about section, skills, and contact form" },
+                    { label: "Blog", prompt: "Create a minimalist blog homepage with featured articles, category filters, newsletter signup, and dark mode support" },
+                ].map((chip) => (
                     <button
-                        key={chip}
-                        onClick={() => setPrompt(chip)}
+                        key={chip.label}
+                        onClick={() => setPrompt(chip.prompt)}
                         className="px-2.5 py-1 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
                     >
-                        {chip}
+                        {chip.label}
                     </button>
                 ))}
             </div>
