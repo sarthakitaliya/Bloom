@@ -98,9 +98,11 @@ export default function ProjectPage({
           );
           setMessages(conversationData.data);
 
-          if (!projectData.data.previewUrl || projectData.restoring) {
+          // Only show "Thinking..." if project is still initializing AND agent hasn't responded yet
+          const hasAgentResponse = conversationData.data.some((msg: Message) => msg.from === "AGENT");
+          if ((!projectData.data.previewUrl || projectData.restoring) && !hasAgentResponse) {
             setProcessing(true);
-          } else {
+          } else if (projectData.data.previewUrl) {
             setTimeout(() => {
               setUrl(projectData.data.previewUrl);
             }, 2000);
@@ -118,7 +120,6 @@ export default function ProjectPage({
           const data = JSON.parse(msg);
           console.log("PROJECT URL RECEIVED", data);
 
-          // Project is initialized, stop processing state
           setProcessing(false);
           setCurrentStatus(null);
 

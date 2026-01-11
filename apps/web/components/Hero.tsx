@@ -71,11 +71,11 @@ export function Hero({ prompt, setPrompt, onSubmit, loading }: HeroProps) {
 
             <div className="flex flex-wrap justify-center gap-2 opacity-70">
                 {[
-                    { label: "Landing Page", prompt: "Build a modern landing page for a tech startup with a hero section, feature highlights, testimonials, and a call-to-action" },
-                    { label: "E-commerce", prompt: "Create an e-commerce product page with image gallery, size selector, add to cart button, and customer reviews section" },
-                    { label: "SaaS Dashboard", prompt: "Design a SaaS analytics dashboard with charts, stats cards, recent activity feed, and a sidebar navigation" },
-                    { label: "Portfolio", prompt: "Build a creative portfolio website for a designer with project showcases, about section, skills, and contact form" },
-                    { label: "Blog", prompt: "Create a minimalist blog homepage with featured articles, category filters, newsletter signup, and dark mode support" },
+                    { label: "Landing Page", prompt: "Build a modern SaaS landing page with: a hero section featuring a bold headline, subtext, and two CTA buttons (Get Started, Learn More); a features grid with 6 feature cards using icons; a testimonials section with 3 customer quotes; a pricing section with 3 tiers; and a footer with links. Use a clean white background with subtle gray accents." },
+                    { label: "Dashboard", prompt: "Create an analytics dashboard with: a top navbar with search and user avatar; a sidebar with navigation links (Dashboard, Analytics, Users, Settings); main content area with 4 stat cards showing key metrics; a large area chart for revenue trends; a recent transactions table with 5 rows; and a pie chart for traffic sources. Use a light gray background." },
+                    { label: "Portfolio", prompt: "Design a minimal portfolio for a designer with: a clean header with name and navigation; a hero section with a large greeting and brief intro; a projects grid showing 4 project cards with hover effects; an about section with a brief bio; a skills section with skill tags; and a contact form with name, email, and message fields." },
+                    { label: "Blog", prompt: "Create a clean blog homepage with: a header with logo and nav links; a featured article card at the top with large image placeholder and title; a grid of 6 article cards with thumbnails and excerpts; category filter pills; a newsletter signup section with email input; and a minimal footer." },
+                    { label: "Pricing", prompt: "Build a pricing page with: a centered headline and subtext; 3 pricing tier cards (Basic, Pro, Enterprise) with feature lists and CTA buttons; the middle card should be highlighted as recommended; a FAQ accordion section with 5 questions; and a final CTA section encouraging users to start. Use clean typography and subtle shadows." },
                 ].map((chip) => (
                     <button
                         key={chip.label}
