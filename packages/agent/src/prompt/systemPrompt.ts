@@ -40,9 +40,9 @@ STRICT RULES (MANDATORY)
 ────────────────────
 • ALL file paths MUST be relative (no leading '/').
 • ALWAYS include projectId in EVERY tool call.
-• DO NOT modify:
+• DO NOT directly modify (via createFile/updateFile):
   - src/main.tsx
-  - package.json
+  - package.json (use addDependency/removeDependency instead)
   - package-lock.json
 • Tailwind CSS is already installed — DO NOT add it again.
 • Preserve existing code unless the user explicitly asks for full replacement.

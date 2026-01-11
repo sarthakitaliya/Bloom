@@ -86,10 +86,19 @@ class SnapshotManager {
       const result = await client.commands.run(processSubCmd, {
         timeoutMs: 10 * 60 * 1000,
       }); // 10 minutes timeout
+
+      console.log("[SnapshotManager] Snapshot extracted, running npm install...");
       const installResult = await client.commands.run("npm install", {
-        timeoutMs: 10 * 60 * 1000,
+        timeoutMs: 2 * 60 * 1000, // 2 minutes timeout
       });
-      console.log("Install result:", installResult);
+
+      if (installResult.stderr && installResult.stderr.includes("ERR!")) {
+        console.error("[SnapshotManager] npm install error:", installResult.stderr);
+        throw new Error(`npm install failed: ${installResult.stderr}`);
+      }
+
+      console.log("[SnapshotManager] npm install completed successfully");
+
       return { ok: true, message: "Snapshot restored", raw: result };
     } catch (error) {
       console.error("Error restoring snapshot:", error);
