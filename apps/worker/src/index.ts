@@ -166,13 +166,20 @@ const worker = new Worker(
           "[worker] Snapshot restored with result:",
           restoreResult.raw
         );
+
+        // Start the dev server in the background
         await client.commands
           .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
             timeoutMs: 50 * 1000,
           })
           .catch((error) => {
             console.error("[worker] Error starting dev server:", error);
-          }); // 50 seconds timeout
+          });
+
+        // Wait for dev server to be ready (5 seconds)
+        console.log("[worker] Waiting for dev server to start...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
         const previewUrl = await client.getHost(5173);
         console.log("[worker] Preview URL:", previewUrl);
         connection.publish(
