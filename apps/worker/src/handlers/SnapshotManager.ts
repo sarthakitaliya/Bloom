@@ -86,6 +86,10 @@ class SnapshotManager {
       const result = await client.commands.run(processSubCmd, {
         timeoutMs: 10 * 60 * 1000,
       }); // 10 minutes timeout
+      const installResult = await client.commands.run("npm install", {
+        timeoutMs: 10 * 60 * 1000,
+      });
+      console.log("Install result:", installResult);
       return { ok: true, message: "Snapshot restored", raw: result };
     } catch (error) {
       console.error("Error restoring snapshot:", error);
