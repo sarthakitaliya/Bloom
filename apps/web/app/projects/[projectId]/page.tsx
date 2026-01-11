@@ -15,12 +15,14 @@ import {
   Eye,
   PanelLeft,
   ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "../../../lib/utils";
 import { useSession } from "../../../lib/auth-client";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id?: string;
@@ -50,6 +52,7 @@ export default function ProjectPage({
   const [dragging, setDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<"Preview" | "Editor">("Preview");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -72,7 +75,7 @@ export default function ProjectPage({
             setLoading(true);
           } else if (data.success && !data.restoring) {
             setLoading(false);
-          }else if (!data.success) {
+          } else if (!data.success) {
             toast.error("Failed to extend sandbox session.");
           }
         } catch (error) {
@@ -94,7 +97,10 @@ export default function ProjectPage({
             `/conversations/${projectId}`
           );
           setMessages(conversationData.data);
-          if (!projectData.restoring) {
+
+          if (!projectData.data.previewUrl || projectData.restoring) {
+            setProcessing(true);
+          } else {
             setTimeout(() => {
               setUrl(projectData.data.previewUrl);
             }, 2000);
@@ -112,6 +118,10 @@ export default function ProjectPage({
           const data = JSON.parse(msg);
           console.log("PROJECT URL RECEIVED", data);
 
+          // Project is initialized, stop processing state
+          setProcessing(false);
+          setCurrentStatus(null);
+
           setTimeout(() => {
             setUrl(`https://${data.previewUrl}`);
           }, 1000);
@@ -120,6 +130,7 @@ export default function ProjectPage({
         socket.on("agent-message", (message: string) => {
           console.log("agent-message", message);
           setProcessing(false);
+          setCurrentStatus(null);
 
           setMessages((prevMessages) => [
             ...prevMessages,
@@ -129,11 +140,32 @@ export default function ProjectPage({
         socket.on("error-message", (message: string) => {
           console.error("Received ERROR from socket:", message);
           setProcessing(false);
+          setCurrentStatus(null);
           toast.error(`Error: ${message}`);
           setMessages((prevMessages) => [
             ...prevMessages,
             { from: "AGENT", content: `Error: ${message}` },
           ]);
+        });
+
+        // Live status updates for tool calls
+        socket.on("agent-status", (data: { type: string; toolName: string; args?: Record<string, any> }) => {
+          if (data.type === "tool_start") {
+            const statusMessages: Record<string, string> = {
+              listFiles: "Exploring project files...",
+              readFile: `Reading ${data.args?.filename || "file"}...`,
+              createFile: `Creating ${data.args?.filename || "file"}...`,
+              updateFile: `Updating ${data.args?.filename || "file"}...`,
+              removeFile: `Removing ${data.args?.filename || "file"}...`,
+              getLogs: "Checking for errors...",
+              addDependency: `Installing ${data.args?.packageName || "package"}...`,
+              removeDependency: `Removing ${data.args?.packageName || "package"}...`,
+            };
+            setCurrentStatus(statusMessages[data.toolName] || `Running ${data.toolName}...`);
+          } else if (data.type === "tool_end") {
+            // Keep showing status for a moment, then reset to thinking
+            setTimeout(() => setCurrentStatus(null), 300);
+          }
         });
       } catch (error) {
         console.error("Error fetching project data:", error);
@@ -147,8 +179,9 @@ export default function ProjectPage({
     return () => {
       if (socketRef.current) {
         socketRef.current.off("agent-message");
+        socketRef.current.off("agent-status");
         socketRef.current.off("preview-url");
-        socketRef.current.disconnect();
+        socketRef.current.off("error-message");
         socketRef.current.disconnect();
       }
     };
@@ -346,10 +379,37 @@ export default function ProjectPage({
                         "px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm",
                         msg.from === "USER"
                           ? "bg-zinc-100 text-zinc-950 rounded-tr-sm"
-                          : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"
+                          : msg.content.startsWith("Error:")
+                            ? "bg-red-500/20 text-red-200 rounded-tl-sm border border-red-500/30"
+                            : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"
                       )}
                     >
-                      {msg.content}
+                      {msg.from === "AGENT" ? (
+                        msg.content.startsWith("Error:") ? (
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="size-4 mt-0.5 text-red-400 shrink-0" />
+                            <span>{msg.content}</span>
+                          </div>
+                        ) : (
+                          <ReactMarkdown
+                            components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                              li: ({ children }) => <li>{children}</li>,
+                              strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                              code: ({ children }) => <code className="bg-white/10 px-1 py-0.5 rounded text-xs">{children}</code>,
+                              h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-base font-semibold mb-2">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        )
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                     <span className="text-[10px] text-muted-foreground opacity-50 px-1">
                       {msg.from === "USER" ? "You" : "Bloom"}
@@ -361,7 +421,7 @@ export default function ProjectPage({
                     <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm bg-white/10 text-gray-200 rounded-tl-sm border border-white/5 flex items-center gap-2">
                       <Loader2 className="size-3 animate-spin" />
                       <span className="text-xs text-muted-foreground">
-                        Thinking...
+                        {currentStatus || "Thinking..."}
                       </span>
                     </div>
                   </div>
@@ -390,8 +450,8 @@ export default function ProjectPage({
                       loading
                         ? "Loading..."
                         : project &&
-                            session?.user?.id &&
-                            session.user.id !== project.userId
+                          session?.user?.id &&
+                          session.user.id !== project.userId
                           ? "View Only Mode – You cannot send messages here."
                           : "Ask Bloom to make changes..."
                     }

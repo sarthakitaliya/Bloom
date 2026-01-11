@@ -12,6 +12,9 @@ export const getConversations = async (req: Request, res: Response) => {
       where: {
         projectId: projectId,
       },
+      orderBy: {
+        createdAt: "asc",
+      },
     });
     res
       .status(200)

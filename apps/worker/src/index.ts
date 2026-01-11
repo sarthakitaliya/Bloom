@@ -200,11 +200,24 @@ const worker = new Worker(
         where: { id },
         data: { status: "FAILED" },
       });
+
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Something went wrong while processing the job";
+
+      await prisma.chatHistory.create({
+        data: {
+          projectId: projectId,
+          content: `Error: ${errorMessage}`,
+          from: "AGENT",
+        },
+      });
+
       connection.publish(
         projectId,
         JSON.stringify({
           type: "ERROR",
-          message: "Something went wrong while processing the job",
+          message: errorMessage,
         })
       );
       throw error;

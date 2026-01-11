@@ -35,7 +35,13 @@ io.on("connection", (socket) => {
 
     console.log(`Received message from ${channel}: ${message}`);
     const data = JSON.parse(message);
-    if (data.type === "Initialized") {
+    if (data.msgType === "agentStatus") {
+      socket.emit("agent-status", {
+        type: data.type,
+        toolName: data.toolName,
+        args: data.args,
+      });
+    } else if (data.type === "Initialized") {
       socket.emit("project-url", message);
     } else if (data.type === "agentMsg") {
       socket.emit("agent-message", data.message);
