@@ -113,7 +113,7 @@ export const initProject = async (req: Request, res: Response) => {
       `sandbox-${newProject.id}`,
       JSON.stringify({ client: sandbox, sandboxId: sandbox.sandboxId }),
       "EX",
-      60 * 9 
+      60 * 9
     );
     console.log("from API", sandbox.sandboxId);
 
@@ -211,7 +211,7 @@ export const getProjectById = async (req: Request, res: Response) => {
         });
         return res.status(200).json({
           success: true,
-          data: project,
+          data: { ...project, previewUrl: null }, // Don't send old URL, frontend should wait for socket
           restoring: true,
         } as ApiResponse<typeof project>);
       } else {

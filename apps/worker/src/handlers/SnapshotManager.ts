@@ -84,12 +84,12 @@ class SnapshotManager {
         `curl --fail --show-error -L "$SNAP_URL" | tar -C "$WORKDIR" -xz --exclude='node_modules'`,
       ].join(" && ");
       const result = await client.commands.run(processSubCmd, {
-        timeoutMs: 10 * 60 * 1000,
-      }); // 10 minutes timeout
+        timeoutMs: 2 * 60 * 1000,
+      }); // 2 minutes timeout
 
       console.log("[SnapshotManager] Snapshot extracted, running npm install...");
       const installResult = await client.commands.run("npm install", {
-        timeoutMs: 2 * 60 * 1000, // 2 minutes timeout
+        timeoutMs: 60 * 1000, // 1 minutes timeout
       });
 
       if (installResult.stderr && installResult.stderr.includes("ERR!")) {
@@ -98,6 +98,18 @@ class SnapshotManager {
       }
 
       console.log("[SnapshotManager] npm install completed successfully");
+
+      // Start the dev server in the background
+      console.log("[SnapshotManager] Starting dev server...");
+      await client.commands
+        .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
+          timeoutMs: 30 * 1000,
+        })
+        .catch((error) => {
+          console.error("[SnapshotManager] Error starting dev server:", error);
+        });
+
+      console.log("[SnapshotManager] Waiting for dev server to initialize...");
 
       return { ok: true, message: "Snapshot restored", raw: result };
     } catch (error) {

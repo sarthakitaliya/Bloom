@@ -162,39 +162,29 @@ const worker = new Worker(
           );
           throw new Error("Snapshot restore failed");
         }
+
         console.log(
           "[worker] Snapshot restored with result:",
           restoreResult.raw
         );
-
-        // Start the dev server in the background
-        await client.commands
-          .run(`nohup npm run dev > /tmp/dev.log 2>&1 &`, {
-            timeoutMs: 50 * 1000,
-          })
-          .catch((error) => {
-            console.error("[worker] Error starting dev server:", error);
+        if (restoreResult.ok) {
+          console.log("[worker] Restored snapshot successfully");
+          const previewUrl = await client.getHost(5173);
+          console.log("[worker] Preview URL:", previewUrl);
+          connection.publish(
+            projectId,
+            JSON.stringify({ type: "Initialized", previewUrl })
+          );
+          await prisma.project.update({
+            where: { id: projectId },
+            data: {
+              previewUrl: `https://${previewUrl}`,
+              sandboxId: sandboxId,
+              lastSeenAt: new Date(),
+              currentSnapshotAt: new Date(),
+            },
           });
-
-        // Wait for dev server to be ready (5 seconds)
-        console.log("[worker] Waiting for dev server to start...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        const previewUrl = await client.getHost(5173);
-        console.log("[worker] Preview URL:", previewUrl);
-        connection.publish(
-          projectId,
-          JSON.stringify({ type: "Initialized", previewUrl })
-        );
-        await prisma.project.update({
-          where: { id: projectId },
-          data: {
-            previewUrl: `https://${previewUrl}`,
-            sandboxId: sandboxId,
-            lastSeenAt: new Date(),
-            currentSnapshotAt: new Date(),
-          },
-        });
+        }
       }
       await prisma.job.update({
         where: { id },

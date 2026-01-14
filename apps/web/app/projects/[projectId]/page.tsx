@@ -125,7 +125,7 @@ export default function ProjectPage({
 
           setTimeout(() => {
             setUrl(`https://${data.previewUrl}`);
-          }, 1000);
+          }, 2000);
         });
 
         socket.on("agent-message", (message: string) => {
