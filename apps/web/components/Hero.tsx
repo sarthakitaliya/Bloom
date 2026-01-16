@@ -47,7 +47,7 @@ export function Hero({ prompt, setPrompt, onSubmit, loading }: HeroProps) {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        className="sm:text-lg placeholder-zinc-500 min-h-[7rem] resize-none focus:outline-none leading-relaxed text-base font-light text-white bg-transparent w-full pt-4 pr-5 pb-4 pl-5"
+                        className="sm:text-lg placeholder-zinc-500 min-h-[7rem] max-h-60 overflow-y-auto resize-none focus:outline-none leading-relaxed text-base font-light text-white bg-transparent w-full pt-4 pr-5 pb-4 pl-5"
                         placeholder="Build a dashboard for a finance app with charts..."
                         disabled={loading}
                     />
