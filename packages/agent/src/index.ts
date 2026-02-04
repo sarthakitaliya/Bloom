@@ -1,4 +1,9 @@
-import { agent, resetToolRepeatTracker, setStatusCallback } from "./agent";
+import {
+  agent,
+  resetToolRepeatTracker,
+  setCurrentThreadId,
+  setStatusCallback,
+} from "./agent";
 import { connection } from "@bloom/queue";
 
 export * from "./agent";
@@ -13,6 +18,7 @@ export async function agentInvoke(prompt: string, projectId: string) {
   });
 
   try {
+    setCurrentThreadId(projectId);
     resetToolRepeatTracker(projectId);
     const response = await agent.invoke({
       messages: [
@@ -37,6 +43,7 @@ export async function agentInvoke(prompt: string, projectId: string) {
     throw error;
   } finally {
     resetToolRepeatTracker(projectId);
+    setCurrentThreadId(null);
     setStatusCallback(null);
   }
 }

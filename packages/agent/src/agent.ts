@@ -29,9 +29,14 @@ export type StatusCallback = (status: {
 
 let statusCallback: StatusCallback | null = null;
 const toolRepeatTracker = new Map<string, { key: string; count: number }>();
+let currentThreadId: string | null = null;
 
 export function setStatusCallback(cb: StatusCallback | null) {
   statusCallback = cb;
+}
+
+export function setCurrentThreadId(threadId: string | null) {
+  currentThreadId = threadId;
 }
 
 export function resetToolRepeatTracker(threadId: string) {
@@ -58,9 +63,7 @@ const handleToolErrors = createMiddleware({
     }
 
     try {
-      const threadId =
-        (request.config?.configurable?.thread_id as string | undefined) ??
-        "default";
+      const threadId = currentThreadId ?? "default";
       const argsKey = JSON.stringify(request.toolCall.args ?? {});
       const key = `${request.toolCall.name}:${argsKey}`;
       const prev = toolRepeatTracker.get(threadId);
