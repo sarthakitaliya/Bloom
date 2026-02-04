@@ -1,4 +1,10 @@
-import { createAgent, createMiddleware, ToolMessage } from "langchain";
+import {
+  createAgent,
+  createMiddleware,
+  modelCallLimitMiddleware,
+  toolCallLimitMiddleware,
+  ToolMessage,
+} from "langchain";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { systemPrompt, systemPromptForTitleAgent } from "./prompt/systemPrompt";
 import {
@@ -22,9 +28,14 @@ export type StatusCallback = (status: {
 }) => void;
 
 let statusCallback: StatusCallback | null = null;
+const toolRepeatTracker = new Map<string, { key: string; count: number }>();
 
 export function setStatusCallback(cb: StatusCallback | null) {
   statusCallback = cb;
+}
+
+export function resetToolRepeatTracker(threadId: string) {
+  toolRepeatTracker.delete(threadId);
 }
 
 export const model = new ChatGoogleGenerativeAI({
@@ -47,6 +58,26 @@ const handleToolErrors = createMiddleware({
     }
 
     try {
+      const threadId =
+        (request.config?.configurable?.thread_id as string | undefined) ??
+        "default";
+      const argsKey = JSON.stringify(request.toolCall.args ?? {});
+      const key = `${request.toolCall.name}:${argsKey}`;
+      const prev = toolRepeatTracker.get(threadId);
+      const next =
+        prev && prev.key === key
+          ? { key, count: prev.count + 1 }
+          : { key, count: 1 };
+      toolRepeatTracker.set(threadId, next);
+
+      if (next.count >= 3) {
+        return new ToolMessage({
+          content:
+            "The same tool was called repeatedly with identical arguments. Do not call it again. Provide a final response with what was completed and any remaining steps.",
+          tool_call_id: request.toolCall.id!,
+        });
+      }
+
       const result = await handler(request);
 
       if (statusCallback) {
@@ -87,7 +118,11 @@ export const agent = createAgent({
     getLogs,
   ],
   checkpointer,
-  middleware: [handleToolErrors],
+  middleware: [
+    modelCallLimitMiddleware({ runLimit: 40, exitBehavior: "end" }),
+    toolCallLimitMiddleware({ runLimit: 25, exitBehavior: "continue" }),
+    handleToolErrors,
+  ],
   systemPrompt: systemPrompt,
 });
 
@@ -95,4 +130,3 @@ export const titleAgent = createAgent({
   model,
   systemPrompt: systemPromptForTitleAgent,
 });
-

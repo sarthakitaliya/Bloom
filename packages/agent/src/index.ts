@@ -1,4 +1,4 @@
-import { agent, setStatusCallback } from "./agent";
+import { agent, resetToolRepeatTracker, setStatusCallback } from "./agent";
 import { connection } from "@bloom/queue";
 
 export * from "./agent";
@@ -13,6 +13,7 @@ export async function agentInvoke(prompt: string, projectId: string) {
   });
 
   try {
+    resetToolRepeatTracker(projectId);
     const response = await agent.invoke({
       messages: [
         {
@@ -20,7 +21,7 @@ export async function agentInvoke(prompt: string, projectId: string) {
           content: `${prompt} here is project id: ${projectId}`,
         },
       ],
-    }, { recursionLimit: 25, configurable: { thread_id: projectId } });
+    }, { recursionLimit: 60, configurable: { thread_id: projectId } });
     return response;
   } catch (error: unknown) {
     if (error instanceof TypeError && error.message.includes("Cannot read properties of undefined")) {
@@ -35,6 +36,7 @@ export async function agentInvoke(prompt: string, projectId: string) {
     }
     throw error;
   } finally {
+    resetToolRepeatTracker(projectId);
     setStatusCallback(null);
   }
 }
