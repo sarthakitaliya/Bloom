@@ -18,11 +18,21 @@ export const removeFile = tool(
     }
     await sandbox.files.remove(filename);
     console.log("removed file", filename);
+    const logResult = await sandbox.commands.run("tail -n 120 /tmp/dev.log");
+    const logs =
+      logResult.exitCode === 0 ? logResult.stdout : logResult.stderr;
+    const logErrorsDetected =
+      typeof logs === "string" &&
+      /(error:|failed to compile|syntaxerror|cannot find module|typeerror|referenceerror)/i.test(
+        logs
+      );
 
     return {
       success: true,
       removed: "removeFile",
       filename,
+      logs,
+      logErrorsDetected,
     }
   },
   {

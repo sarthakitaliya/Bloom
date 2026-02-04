@@ -20,22 +20,25 @@ export async function agentInvoke(prompt: string, projectId: string) {
   try {
     setCurrentThreadId(projectId);
     resetToolRepeatTracker(projectId);
-    const response = await agent.invoke({
-      messages: [
-        {
-          role: "user",
-          content: `${prompt} here is project id: ${projectId}`,
-        },
-      ],
-    }, { recursionLimit: 60, configurable: { thread_id: projectId } });
+    const response = await agent.invoke(
+      {
+        messages: [
+          {
+            role: "user",
+            content: `${prompt} here is project id: ${projectId}`,
+          },
+        ],
+      },
+      { recursionLimit: 60, configurable: { thread_id: projectId } }
+    );
     return response;
   } catch (error: unknown) {
-    if (error instanceof TypeError && error.message.includes("Cannot read properties of undefined")) {
+    if (
+      error instanceof TypeError &&
+      error.message.includes("Cannot read properties of undefined")
+    ) {
       const wrappedError = new Error(
-        `Google Generative AI returned an invalid response. This may be due to: ` +
-        `1) Content blocked by safety filters, ` +
-        `2) API rate limit exceeded, ` +
-        `3) API quota exhausted `
+        `Model returned an invalid response. Please retry the request.`
       );
       wrappedError.cause = error;
       throw wrappedError;

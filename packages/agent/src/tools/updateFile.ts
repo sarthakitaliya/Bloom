@@ -19,11 +19,21 @@ export const updateFile = tool(
     }
     await sandbox.files.write(filename, content);
     console.log("file updated", filename);
+    const logResult = await sandbox.commands.run("tail -n 120 /tmp/dev.log");
+    const logs =
+      logResult.exitCode === 0 ? logResult.stdout : logResult.stderr;
+    const logErrorsDetected =
+      typeof logs === "string" &&
+      /(error:|failed to compile|syntaxerror|cannot find module|typeerror|referenceerror)/i.test(
+        logs
+      );
     
     return {
       updated: true,
       action: "updateFile",
       filename,
+      logs,
+      logErrorsDetected,
     }
   },
   {

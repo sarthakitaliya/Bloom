@@ -1,12 +1,25 @@
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 export default function Preview({ url }: { url: string }) {
+  const [iframeSrc, setIframeSrc] = useState("");
+
+  useEffect(() => {
+    if (!url) {
+      setIframeSrc("");
+      return;
+    }
+    const separator = url.includes("?") ? "&" : "?";
+    setIframeSrc(`${url}${separator}t=${Date.now()}`);
+  }, [url]);
+
   return (
     <div className="w-full h-full rounded-xl overflow-hidden bg-black/40 border border-white/5 relative group">
       <div className="h-full w-full bg-white relative">
-        {url ? (
+        {iframeSrc ? (
           <iframe
-            src={url}
+            key={iframeSrc}
+            src={iframeSrc}
             title="Project Preview"
             className="size-full border-none"
           />

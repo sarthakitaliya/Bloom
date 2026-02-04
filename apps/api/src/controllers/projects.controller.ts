@@ -5,6 +5,31 @@ import { agentInvoke, titleAgent } from "@bloom/agent";
 import { sandboxManager } from "@bloom/agent";
 import { builderQueue, connection as redis } from "@bloom/queue";
 
+const RESTORE_LOCK_TTL_SECONDS = 120;
+
+const hasActiveRestoreJob = async (projectId: string) => {
+  const existing = await prisma.job.findFirst({
+    where: {
+      projectId,
+      type: "RESTORE",
+      status: { in: ["QUEUED", "ACTIVE"] },
+    },
+  });
+  return Boolean(existing);
+};
+
+const acquireRestoreLock = async (projectId: string) => {
+  const key = `restore-lock-${projectId}`;
+  const result = await redis.set(
+    key,
+    "1",
+    "EX",
+    RESTORE_LOCK_TTL_SECONDS,
+    "NX"
+  );
+  return result === "OK";
+};
+
 export const getProjects = async (req: Request, res: Response) => {
   try {
     const { filter } = req.query;
@@ -187,6 +212,22 @@ export const getProjectById = async (req: Request, res: Response) => {
       const now = new Date();
       const EXPIRATION_MS = 9 * 60 * 1000; // 9 minutes
       if (now.getTime() - lastSeen.getTime() > EXPIRATION_MS) {
+        if (await hasActiveRestoreJob(project.id)) {
+          return res.status(200).json({
+            success: true,
+            data: { ...project, previewUrl: null },
+            restoring: true,
+          } as ApiResponse<typeof project>);
+        }
+        const lockAcquired = await acquireRestoreLock(project.id);
+        if (!lockAcquired) {
+          return res.status(200).json({
+            success: true,
+            data: { ...project, previewUrl: null },
+            restoring: true,
+          } as ApiResponse<typeof project>);
+        }
+
         await redis.del(`sandbox-${project.id}`);
         const sandbox = await sandboxManager.createSandbox(project.id);
         redis.set(
@@ -287,6 +328,22 @@ export const extendSandbox = async (req: Request, res: Response) => {
 
     const client = await sandboxManager.getSandbox(project.id);
     if (!client) {
+      if (await hasActiveRestoreJob(project.id)) {
+        return res.status(200).json({
+          success: true,
+          data: project,
+          restoring: true,
+        } as ApiResponse<typeof project>);
+      }
+      const lockAcquired = await acquireRestoreLock(project.id);
+      if (!lockAcquired) {
+        return res.status(200).json({
+          success: true,
+          data: project,
+          restoring: true,
+        } as ApiResponse<typeof project>);
+      }
+
       await redis.del(`sandbox-${project.id}`);
       const sandbox = await sandboxManager.createSandbox(project.id);
       redis.set(

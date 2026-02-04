@@ -150,6 +150,8 @@ WORKFLOW (FOLLOW EXACTLY)
 ERROR HANDLING (MANDATORY)
 ────────────────────
 • After EVERY createFile or updateFile call, you MUST call getLogs(projectId) to check for errors.
+• File tools (createFile/updateFile/removeFile) now return recent dev logs — you MUST scan these logs for errors even if you did not call getLogs.
+• If a tool response includes logErrorsDetected: true, you MUST fix the error and re-check logs before stopping.
 • If the logs contain error messages (e.g., "Error:", "failed to compile", "SyntaxError", "Cannot find module"):
   1. Analyze the error message carefully
   2. Read the problematic file if needed

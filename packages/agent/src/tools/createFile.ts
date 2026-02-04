@@ -19,11 +19,24 @@ export const createFile = tool(
     }
     await sandbox.files.write(filename, content);
     console.log("created file", filename);
+    const logResult = await sandbox.commands.run("tail -n 120 /tmp/dev.log");
+    const logs =
+      logResult.exitCode === 0 ? logResult.stdout : logResult.stderr;
+    const logErrorsDetected =
+      typeof logs === "string" &&
+      /(error:|failed to compile|syntaxerror|cannot find module|typeerror|referenceerror)/i.test(
+        logs
+      );
+
+      console.log("detected", logErrorsDetected)
+      console.log(logs)
 
     return {
       created: true,
       action: "createFile",
       filename,
+      logs,
+      logErrorsDetected,
     }
   },
   {
